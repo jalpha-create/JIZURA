@@ -58,6 +58,47 @@ class Renderer {
   frame(ctx, plan, t, opt = {}) {
     const W = plan.W, H = plan.H, scale = opt.scale || 1;
     const cw = ctx.canvas.width, ch = ctx.canvas.height;
+    const foregroundCut = plan.foreground && J.mediaAt(plan, t, 'foreground');
+    if (!opt.noForeground && !(opt.transparent && opt.layer === 'back') && foregroundCut && J.mediaAssets.has(foregroundCut.itemId)) {
+      const step = J.stepDur(plan.fx, plan.fps);
+      const lyricCut = J.cutAt(plan, Math.floor(t / step + 1e-6) * step);
+      const frontmost = !!(lyricCut && lyricCut.frontmost);
+      this.frame(ctx, plan, t, Object.assign({}, opt, { noForeground: true, noLyrics: frontmost }));
+      const layer = this.ensure(this.foregroundLayer || (this.foregroundLayer = document.createElement('canvas')), cw, ch);
+      const lx = layer.getContext('2d'); lx.setTransform(1, 0, 0, 1, 0, 0); lx.globalAlpha = 1; lx.globalCompositeOperation = 'source-over'; lx.filter = 'none'; lx.clearRect(0, 0, cw, ch);
+      J.drawMedia(lx, plan, t, this, 'foreground', !!opt.previewEdit);
+      const previousForeground = foregroundCut.index > 0 && plan.foreground.cuts[foregroundCut.index - 1];
+      if (!opt.previewEdit && foregroundCut.chromaKey && foregroundCut.trans && previousForeground && J.mediaAssets.has(previousForeground.itemId) && Math.abs(previousForeground.end - foregroundCut.start) < 0.06 && t - foregroundCut.start < foregroundCut.transDur) {
+        const mask = this.ensure(this.foregroundKeyMask || (this.foregroundKeyMask = document.createElement('canvas')), cw, ch);
+        const mx = mask.getContext('2d'); mx.setTransform(1, 0, 0, 1, 0, 0); mx.globalAlpha = 1; mx.globalCompositeOperation = 'source-over'; mx.filter = 'none'; mx.clearRect(0, 0, cw, ch);
+        J.drawMediaCut(mx, foregroundCut, t, { noEnter: true, noExit: true, previewEdit: !!opt.previewEdit });
+        lx.globalCompositeOperation = 'destination-in'; lx.drawImage(mask, 0, 0); lx.globalCompositeOperation = 'source-over';
+      }
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = plan.foreground.opacity / 100;
+      ctx.globalCompositeOperation = { normal: 'source-over', multiply: 'multiply', screen: 'screen' }[plan.foreground.blend] || 'source-over';
+      ctx.drawImage(layer, 0, 0); ctx.restore();
+      if (frontmost) {
+        const top = this.ensure(this.frontmostLayer || (this.frontmostLayer = mk(2, 2)), cw, ch);
+        this.frame(top.getContext('2d'), plan, t, Object.assign({}, opt, { noForeground: true, noMedia: true, transparent: true, noHud: true, noPost: true }));
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = plan.media ? plan.media.opacity / 100 : 1;
+        ctx.globalCompositeOperation = plan.media ? ({ normal: 'source-over', multiply: 'multiply', screen: 'screen' }[plan.media.blend] || 'source-over') : 'source-over';
+        ctx.drawImage(top, 0, 0); ctx.restore();
+      }
+      return;
+    }
+    if (!opt.noMedia && !opt.transparent && plan.media && J.mediaAt(plan, t) && J.mediaAssets.has(J.mediaAt(plan, t).itemId)) {
+      const layer = this.ensure(this.mediaLayer || (this.mediaLayer = document.createElement('canvas')), cw, ch);
+      this.frame(layer.getContext('2d'), plan, t, Object.assign({}, opt, { transparent: true, noMedia: true }));
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.fillStyle = plan.style.schemes[0].bg; ctx.fillRect(0, 0, cw, ch);
+      J.drawMedia(ctx, plan, t, this, 'media', !!opt.previewEdit);
+      ctx.globalAlpha = plan.media.opacity / 100;
+      ctx.globalCompositeOperation = { normal: 'source-over', multiply: 'multiply', screen: 'screen' }[plan.media.blend] || 'source-over';
+      ctx.drawImage(layer, 0, 0); ctx.restore();
+      return;
+    }
     const fx = plan.fx, st = plan.style, fps = plan.fps;
     // motion is quantised to 'koma' drawings per second (24fps timebase); random flicker runs on a <=24Hz clock
     const stepDur = J.stepDur(fx, fps);
@@ -89,6 +130,11 @@ class Renderer {
         ctx.drawImage(this.paper(W, H), 0, 0, W, H);
         ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
       }
+    }
+    if (mainCut && mainCut.blank) {
+      ctx.restore();
+      if (key && !opt.noPost) this.keyFinish(ctx, key, opt);
+      return;
     }
     // ---------- camera & chroma amounts ----------
     const u = H / 1080;
@@ -130,7 +176,7 @@ class Renderer {
     // camera blur (focus pulls etc.) is applied ONCE to the whole content layer — a blur filter on every
     // individual draw call is extremely slow when a layout draws many text rows
     let layerBlur = 0, LX = null;
-    if (allowFilter && mainCut && J.CAMERA[mainCut.cam] && mainCut.cam !== 'push') {
+    if (!opt.noLyrics && allowFilter && mainCut && J.CAMERA[mainCut.cam] && mainCut.cam !== 'push') {
       try {
         const e0 = this.makeEnv(ctx, plan, mainCut, sc, { pass: 'main', t: tq, lt: tq - mainCut.start, ltb: tq - mainCut.start, step, scale, allowFilter, energy, beat: beatInfo });
         const c0 = J.CAMERA[mainCut.cam].get(e0, mainCut.camP || {});
@@ -142,7 +188,7 @@ class Renderer {
         LX.clearRect(0, 0, cw, ch); LX.setTransform(scale, 0, 0, scale, 0, 0);
       }
     }
-    for (const P of passes) {
+    for (const P of opt.noLyrics ? [] : passes) {
       if (P.pass !== 'main' && !ghostOn) continue;
       const tp = Math.max(0, tq - P.lag);
       const cut = P.lag ? J.cutAt(plan, tp) : mainCut;
@@ -155,16 +201,24 @@ class Renderer {
         t: tp, lt, ltb: lt + P.lag, step: Math.floor(tp / clock + 1e-6), scale, allowFilter, energy, beat: beatInfo, layer,
       });
       X.save();
+      const area = cut.area, areaX = area ? area.x * W : 0, areaY = area ? area.y * H : 0;
+      const contentW = env.W, contentH = env.H;
+      if (area) {
+        X.translate(areaX + contentW / 2, areaY + contentH / 2);
+        X.rotate((area.angle || 0) * J.DEG);
+        X.translate(-areaX - contentW / 2, -areaY - contentH / 2);
+        X.beginPath(); X.rect(areaX, areaY, contentW, contentH); X.clip();
+      }
       // camera move for this cut (default: slow push-in)
       let cam = null;
       const CD = J.CAMERA[cut.cam] || J.CAMERA.push;
       try { cam = CD.get(env, cut.camP || {}); } catch (e) { cam = null; }
       cam = cam || {};
       const cs = cam.s ?? 1;
-      X.translate(W / 2 + shx + P.off[0] + (cam.x || 0), H / 2 + shy + P.off[1] + (cam.y || 0));
+      X.translate(areaX + contentW / 2 + shx + P.off[0] + (cam.x || 0), areaY + contentH / 2 + shy + P.off[1] + (cam.y || 0));
       if (cam.rot) X.rotate(cam.rot * J.DEG);
       if (cam.skx) X.transform(1, 0, Math.tan(cam.skx * J.DEG), 1, 0, 0);
-      X.scale(cs * (cam.sx ?? 1), cs * (cam.sy ?? 1)); X.translate(-W / 2, -H / 2);
+      X.scale(cs * (cam.sx ?? 1), cs * (cam.sy ?? 1)); X.translate(-contentW / 2, -contentH / 2);
       if (P.pass !== 'main') X.globalCompositeOperation = J.lum(csc.bg) > 0.55 ? 'multiply' : 'source-over';
       this.drawCut(env);
       X.restore();
@@ -175,7 +229,7 @@ class Renderer {
       ctx.filter = `blur(${(layerBlur * scale).toFixed(1)}px)`; ctx.drawImage(LX.canvas, 0, 0); ctx.restore();
     }
     // ---------- cut-to-cut transition: composite the previous cut's resting frame with this one ----------
-    if (!opt.noTrans && mainCut && mainCut.trans && J.TRANS[mainCut.trans] && mainCut.index > 0) {
+    if (!opt.noLyrics && !opt.noTrans && mainCut && mainCut.trans && J.TRANS[mainCut.trans] && mainCut.index > 0) {
       const lt = tq - mainCut.start, dur = mainCut.transDur || 0.35;
       const prev = plan.cuts[mainCut.index - 1];
       if (lt < dur && prev && Math.abs(prev.end - mainCut.start) < 0.06) {
@@ -191,7 +245,7 @@ class Renderer {
     }
     // ---------- HUD ----------
     if (plan.hud && !opt.noHud && layer !== 'back') {
-      const env = this.makeEnv(ctx, plan, mainCut, sc, { pass: 'main', t: tq, lt: 0, ltb: 0, step, scale, allowFilter, energy, beat: beatInfo });
+      const env = this.makeEnv(ctx, plan, mainCut, sc, { pass: 'main', t: tq, lt: 0, ltb: 0, step, scale, allowFilter, energy, beat: beatInfo, fullFrame: true });
       J.drawHUD(env, plan);
     }
     ctx.restore();
@@ -227,7 +281,8 @@ class Renderer {
   }
 
   makeEnv(ctx, plan, cut, sc, o) {
-    const W = plan.W, H = plan.H;
+    const area = cut && cut.area && !o.bgOnly && !o.fullFrame ? cut.area : null;
+    const W = area ? plan.W * area.w : plan.W, H = area ? plan.H * area.h : plan.H;
     const env = Object.assign({ ctx, W, H, sc, st: plan.style, fx: plan.fx, fps: plan.fps, cut, plan }, o);
     if (cut) {
       env.pIn = J.clamp(o.lt / Math.max(0.01, cut.inDur));

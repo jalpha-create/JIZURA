@@ -312,13 +312,157 @@ def replace_copy(source, glossary):
     return source
 
 
+# Fork UI text is translated before the original glossary so short common
+# words such as 歌詞 and 追加 cannot split a longer fork label in half.
+FORK_BODY = {
+    '末尾の◀▶をドラッグして全体の長さを変更。再生時間の分母をクリックして直接入力。鎖マークを別のタイムラインの鎖へドラッグしてリンク。×で解除。': 'Drag ◀▶ at the end to change the total duration, or click the duration beside playback time to enter it. Drag a chain icon to one on another timeline to link boundaries; use × to unlink.',
+    '動画全体の長さ（秒または分:秒、空欄で自動）': 'Total video duration (seconds or mm:ss; blank for auto)',
+    '動画全体の長さを入力（空欄で自動）': 'Enter total video duration (blank for auto)',
+    '動画全体の長さをドラッグして変更': 'Drag to change total video duration',
+    'ドラッグして動画全体の長さを変更': 'Drag to change total video duration',
+    '動画全体の長さを入力': 'Enter total video duration',
+    '>曲を削除</button>': '>Remove audio</button>',
+    '<code>\\</code> を制御文字の前に置くと、その文字を歌詞として表示（例：<code>\\*</code>・<code>\\/</code>・<code>\\|</code>・<code>\\!</code>・<code>\\#</code>・<code>\\[</code>・<code>\\\\</code>）': 'Place <code>\\</code> before a control character to display it literally (for example: <code>\\*</code>, <code>\\/</code>, <code>\\|</code>, <code>\\!</code>, <code>\\#</code>, <code>\\[</code>, <code>\\\\</code>)',
+    '元に戻す（Ctrl+Z）': 'Undo (Ctrl+Z)',
+    'やり直す（Ctrl+Shift+Z）': 'Redo (Ctrl+Shift+Z)',
+    '↶ 元に戻す': '↶ Undo',
+    '↷ やり直す': '↷ Redo',
+    '鎖マークを別のタイムラインの鎖へドラッグしてリンク。×で解除。': 'Drag a chain icon to one on another timeline to link boundaries. Use × to unlink.',
+    'タイムラインの境界リンク': 'Timeline boundary links',
+    '素材': 'Source', '前景': 'Foreground',
+    'Jevで作る（β）': 'Create with Jev (β)',
+    '歌詞からJevで作る（β）': 'Create from lyrics with Jev (β)',
+    'Jevの使い方': 'Jev guide',
+    'https://github.com/hirazisora/JIZURA/blob/main/docs/JEV_GUIDE.md': 'https://github.com/hirazisora/JIZURA/blob/main/docs/JEV_GUIDE.en.md',
+    'オリジナル版（852wa/JIZURA）': 'Original edition (852wa/JIZURA)',
+    '字面 JIZURA（hirazi fork)': 'JIZURA (hirazi fork)',
+    'Jevへの追加指示（任意）': 'Additional directions for Jev (optional)',
+    'Jevへの追加指示': 'Additional directions for Jev',
+    '例：夜の街のような静かな雰囲気。サビは大胆に。': 'Example: A quiet night city mood. Make the chorus bold.',
+    '「Jevで作る」ときだけ歌詞と一緒に送信します。既存のスタイル・手法から選びます。': 'Sent with your lyrics only when you use Jev. Jev chooses from the available styles and techniques.',
+    '歌詞の合成方法': 'Lyrics blend mode', '歌詞不透明度（％）': 'Lyrics opacity (%)',
+    '前景の合成方法': 'Foreground blend mode', '前景不透明度（％）': 'Foreground opacity (%)',
+    '<option value="normal">通常</option>': '<option value="normal">Normal</option>',
+    '<option value="multiply">乗算</option>': '<option value="multiply">Multiply</option>',
+    '<option value="screen">スクリーン</option>': '<option value="screen">Screen</option>',
+    'アップロード順にカットを作ります。サムネイルをドラッグして並べ替えできます。素材はこのブラウザに保存されます。': 'Cuts follow upload order. Drag thumbnails to reorder them. Files are stored in this browser.',
+    '画像・動画をここへドラッグ＆ドロップ、または「追加」から選択できます。素材はこのブラウザに保存されます。': 'Drop images or videos here, or use Add to select files. Files are stored in this browser.',
+    'ランダム順で表示': 'Shuffle order', 'ループ表示': 'Loop cuts',
+    '素材を順に繰り返し、素材数より多いカットを作成できます': 'Repeat the files in order and create more cuts than files.',
+    'カット数': 'Number of cuts',
+    '曲に合わせて、各行・素材が始まる瞬間に Space かボタンを押してください。': 'Press Space or the button when each lyric line or media cut starts.',
+    '表示位置とサイズを編集': 'Edit position and size',
+    'ドラッグして歌詞の表示範囲を指定': 'Drag to select the lyrics display area',
+    'アスペクト比を固定': 'Lock aspect ratio',
+    '幅（画面比％）': 'Width (% of canvas)', '高さ（画面比％）': 'Height (% of canvas)',
+    '角度（°）': 'Rotation (°)', '全域へリセット': 'Reset to full area',
+    'この行だけに適用': 'Apply to this line', 'これ以降全てに適用': 'Apply from here onward',
+    '歌詞を Jev に送り、スタイルと行ごとの演出を選ぶ': 'Send lyrics to Jev to choose styles and effects for each line',
+    'Jevで作る': 'Create with Jev', '歌詞からJevで作る': 'Create from lyrics with Jev',
+    'Jevを使うと、歌詞を外部APIへ送ってスタイル・雰囲気・行ごとのレイアウトと動きを選びます。ローカルサーバーとAPIキーが必要です。': 'Jev sends lyrics to an external API to choose styles, moods, layouts, and motion. A local server and API key are required.',
+    '前景タイムライン（境界をドラッグして開始時刻を変更、ほかは再生位置を移動）': 'Foreground timeline (drag a cut boundary to change its start time; drag elsewhere to seek)',
+    '歌詞タイムライン（境界をドラッグして開始時刻を変更、ほかは再生位置を移動）': 'Lyrics timeline (drag a cut boundary to change its start time; drag elsewhere to seek)',
+    '背景タイムライン（境界をドラッグして開始時刻を変更、ほかは再生位置を移動）': 'Background timeline (drag a cut boundary to change its start time; drag elsewhere to seek)',
+    'このサイトはオリジナル版を基にしたfork版です。Jevによる構成選定と、背景・前景の画像・動画編集機能などを追加しています。': 'This fork builds on the original. It adds Jev-guided arrangement and image and video editing for background and foreground layers.',
+    '通常の編集と書き出しはブラウザ内で処理します。「Jevで作る」を使う場合は、歌詞と任意の追加指示をローカルサーバー経由で Jev API に送信します。曲の音声ファイルは送信しません。': 'Editing and export run in your browser. When you use Jev, your lyrics and optional directions are sent to the Jev API through a local server. Audio files are not sent.',
+    'fork版のソースコード：': 'Fork source code: ',
+}
+
+FORK_UI = {
+    '${cut.line + 1}行目${cut.part + 1}カット目を最前に表示': 'Show line ${cut.line + 1}, cut ${cut.part + 1} above foreground',
+    '${i + 1}行目${c.part + 1}カット目を最前に表示': 'Show line ${i + 1}, cut ${c.part + 1} above foreground',
+    '最前に表示': 'Show above foreground',
+    '動画全体の長さは ${J.fmtTime(minimum)} ～ 06:00:00 の範囲で入力してください': 'Enter a total video duration from ${J.fmtTime(minimum)} to 06:00:00',
+    '境界をリンク': 'Link boundary',
+    'リンクを解除': 'Remove link',
+    '同じレイヤーの境界は同時にリンクできません': 'Boundaries on the same layer cannot be linked together',
+    'この開始位置にはリンクできません': 'Cannot link at this start time',
+    '無表示カットの開始秒': 'Blank cut start time (s)',
+    '無表示カットを削除': 'Remove blank cut',
+    '番目に無表示カットを追加': ' position: add blank cut',
+    '＋ 無表示カットを追加': '+ Add blank cut',
+    "chip('l', '歌詞', '無表示')": "chip('l', 'Lyrics', 'Blank')",
+    "cut.blank ? '無表示'": "cut.blank ? 'Blank'",
+    '>無表示</span>': '>Blank</span>',
+    '>削除</button>': '>Remove</button>',
+    '画像無し': 'No image',
+    '手動で追加したカットでは素材を個別に指定します': 'Choose a file for each manually added cut',
+    '${index + 1}番目にカットを追加': 'Insert cut at position ${index + 1}',
+    '＋ カットを追加': '+ Add cut',
+    '${i + 1}カット目の素材': 'File for cut ${i + 1}',
+    'タップするたびに画像無しのカットを追加します。終了するまで続けられます。': 'Each tap adds a cut with no image. Continue until you stop.',
+    '前景': 'Foreground', '角度': 'Rotation', 'クロマキー': 'Chroma key',
+    '表示方法': 'Display mode',
+    "chip('l', '表示',": "chip('l', 'Display',",
+    '<option value="">おまかせ</option>': '<option value="">Auto</option>',
+    '<label>色<input': '<label>Color<input',
+    'フォントを読み込めませんでした': 'Could not load fonts',
+    'プロジェクトを読み込めませんでした': 'Could not load project',
+    '画像・動画を読み込めませんでした': 'Could not load image or video',
+    '動画を読み込めませんでした': 'Could not load video',
+    'キャンセルしました': 'Canceled',
+    '行目の歌詞表示エリアを編集': ' line lyrics display area',
+    '内側をドラッグして移動・四隅でサイズ変更・枠の周囲をドラッグして回転': 'Drag inside to move, corners to resize, or around the frame to rotate',
+    'ドラッグして歌詞の表示範囲を指定': 'Drag to select the lyrics display area',
+    'このカットだけに適用': 'Apply to this cut', 'この行だけに適用': 'Apply to this line',
+    'これ以降全てに適用': 'Apply from here onward',
+    '行目「': ' line: “', 'カット目「': ' cut: “', '」の表示エリア': '” display area',
+    '」の配置・サイズ': '” position and size',
+    '素材 / ': 'files / ', '素材なし': 'File unavailable', 'を削除': ' remove',
+    'カット目の配置とサイズを編集': ' cut position and size',
+    '配置・サイズを編集': 'Edit position and size', '自動配置に戻す': 'Reset automatic placement',
+    'カット目の開始秒': ' cut start time (s)',
+    '動画をループ再生': 'Loop video', 'クロマキー合成': 'Chroma key',
+    'カット目のクロマキー色': ' cut chroma key color',
+    'このカットを再抽選': 'Reroll this cut', 'このカットをロック': 'Lock this cut',
+    'この行の表示エリアを編集': 'Edit this line display area',
+    'このカットの配置とサイズを編集': 'Edit this cut position and size',
+    '曲なし（読み込むと拍を検出してカットを合わせます）': 'No audio (load a song to detect beats and align cuts)',
+    'カット目の動画の長さ（秒）': ' cut video duration (s)',
+    '動画の長さ（秒）': 'Video duration (s)', 'placeholder="自動"': 'placeholder="Auto"',
+    'カット数の上限に達しました': 'Maximum number of cuts reached',
+    'タップするたびに画像・動画のカットを追加します。終了するまで続けられます。': 'Each tap adds another image or video cut. Continue until you stop.',
+    '曲に合わせて、各行・素材が始まる瞬間に Space かボタンを押してください。': 'Press Space or the button when each lyric line or media cut starts.',
+    'Jev が歌詞と演出を選定中…': 'Jev is choosing styles and effects…',
+    '選定中に歌詞か追加指示が変わりました。もう一度実行してください': 'Lyrics or directions changed while Jev was working. Please try again.',
+    '読み込めませんでした': 'Could not load',
+    '全体を表示': 'Show entire file', '全画面': 'Fill canvas',
+    'フェード': 'Fade', 'スライド': 'Slide', 'ズーム': 'Zoom', '即時': 'Instant',
+    '静止': 'Still', 'ゆっくり拡大': 'Slow zoom', '横移動': 'Pan',
+    'なし': 'None', 'モノクロ': 'Monochrome', 'セピア': 'Sepia',
+    '高コントラスト': 'High contrast', 'ぼかし': 'Blur', 'クロスフェード': 'Crossfade',
+}
+
+FORK_JEV_ERRORS = {
+    '歌詞を入力してください': 'Enter lyrics first',
+    'Jev ローカルサーバーに接続できません。起動状態とブラウザのローカルネットワーク許可を確認してください': 'Could not connect to the Jev local server. Check that it is running and that the browser allows local network access.',
+    'Jev のスタイル選定結果を確認できませんでした': 'Jev did not return a valid style selection',
+    '歌詞とユーザーの追加指示の両方を考慮する。': 'Consider both the lyrics and the user’s additional directions.',
+    '歌詞を考慮する。': 'Consider the lyrics.',
+    '歌詞全体に最も合う映像の雰囲気を選ぶ。': 'Choose the video mood that best fits the full lyrics.',
+    '歌詞全体に最も合う文字PVの配色と書体のスタイルを選ぶ。': 'Choose the lyric video palette and typography style that best fits the full lyrics.',
+    '文字レイアウト': 'text layout', '登場の動き': 'entrance motion', '退場の動き': 'exit motion',
+    ' に合う': ' that suits ', 'を選ぶ。': '.', '行 ': 'Line ',
+}
+
+FORK_MEDIA = dict(FORK_UI, **{
+    '画像無し': 'No image',
+    '左上': 'Top left', '右上': 'Top right', '左下': 'Bottom left', '右下': 'Bottom right',
+    '中央': 'Center', '上': 'Top', '下': 'Bottom', '左': 'Left', '右': 'Right',
+})
+
+
 def localize_body(source):
-    return replace_copy(source, BODY).replace('You own the<strong>', 'You own the <strong>')
+    return replace_copy(replace_copy(source, FORK_BODY), BODY).replace('You own the<strong>', 'You own the <strong>')
 
 
 def localize_js(source, filename):
     if filename.endswith('12_ui.js'):
-        return replace_copy(source, UI)
+        return replace_copy(replace_copy(source, FORK_UI), UI)
+    if filename.endswith('08d_media.js'):
+        return replace_copy(source, FORK_MEDIA)
+    if filename.endswith('08c_jev.js'):
+        return replace_copy(source, FORK_JEV_ERRORS)
     if filename.endswith('11_export.js'):
         return replace_copy(source, EXPORT)
     return source

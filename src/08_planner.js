@@ -12,7 +12,9 @@ J.SAMPLE_LYRICS = `夜明けの色を/覚えてる
 J.defaultProject = () => ({
   version: 1,
   title: '', artist: '',
+  durationOverride: null,         // null = automatic; otherwise total video length in seconds
   lyrics: J.SAMPLE_LYRICS,
+  jevPrompt: '',
   style: 'noir', mood: null,
   extra: false,                   // random picks may use the parts added after the first version (追加分)
   wa: true,                       // …and the 和風 motifs (提灯・障子・家紋…) — applied after 'extra'
@@ -22,8 +24,13 @@ J.defaultProject = () => ({
   aspect: '16:9', res: 1080, fps: 24,
   fx: { motion: 0.7, glitch: 0.55, chroma: 0.7, decor: 0.5, density: 0.55, texture: 0.6, flash: true, onTwos: true, koma: 12, hud: 'auto', bgSwitch: 0.35 },
   enabled: Object.fromEntries(J.GROUP_KEYS.map(g => [g, Object.fromEntries(J.order(g).map(k => [k, true]))])),
-  timing: { bpm: 0, offset: 0.4, snap: true, tail: 0.9, lineTimes: {}, lineScale: 1 },
+  timing: { bpm: 0, offset: 0.4, snap: true, tail: 0.9, lineTimes: {}, cutTimes: {}, lineScale: 1 },
   overrides: {},
+  lyricCutOptions: {},
+  lyricBlankCuts: [],
+  timelineLinks: [],
+  media: { items: [], randomOrder: false, loop: false, cutCount: 0, seed: 1, timing: { lineTimes: {} }, overrides: {}, cutOverrides: {}, blend: 'normal', opacity: 100 },
+  foreground: { items: [], randomOrder: false, loop: false, cutCount: 0, seed: 1, timing: { lineTimes: {} }, overrides: {}, cutOverrides: {}, blend: 'normal', opacity: 100 },
   colors: { enabled: false },
   fonts: {},
 });
@@ -36,39 +43,43 @@ J.komaOf = fx => (fx.koma != null ? +fx.koma : (fx.onTwos === false ? 0 : 12));
 J.stepDur = (fx, fps) => { const k = J.komaOf(fx); return k > 0 ? 1 / k : 1 / (fps || 24); };
 
 /* ---------------- lyric parsing ---------------- */
+const lyricEscapes = { '\\': '\uE000', '#': '\uE001', '[': '\uE002', ']': '\uE003', '|': '\uE004', '!': '\uE005', '！': '\uE006', '*': '\uE007', '/': '\uE008' };
+const lyricUnescapes = Object.fromEntries(Object.entries(lyricEscapes).map(([literal, token]) => [token, literal]));
+const protectLyricEscapes = s => s.replace(/\\([\\#\[\]|!！*\/])/g, (_, literal) => lyricEscapes[literal]);
+const restoreLyricEscapes = s => String(s).replace(/[\uE000-\uE008]/g, token => lyricUnescapes[token]);
 J.parseLyrics = (raw) => {
   const lines = []; const meta = {};
   let pendingGap = false;
   for (let src of String(raw || '').replace(/\r/g, '').split('\n')) {
-    const s0 = src.trim();
+    const s0 = protectLyricEscapes(src.trim());
     if (!s0) { if (lines.length) pendingGap = true; continue; }
     if (s0.startsWith('#')) continue;
     const mm = s0.match(/^\[(ti|ar|al|by|offset):(.*)\]$/i);
-    if (mm) { meta[mm[1].toLowerCase()] = mm[2].trim(); continue; }
+    if (mm) { meta[mm[1].toLowerCase()] = restoreLyricEscapes(mm[2].trim()); continue; }
     let s = s0; const times = [];
     let m;
     while ((m = s.match(/^\[(\d+):(\d+(?:[.:]\d+)?)\]/))) { times.push(+m[1] * 60 + parseFloat(m[2].replace(':', '.'))); s = s.slice(m[0].length); }
     s = s.trim();
     let note = null;
     const bar = s.indexOf('|');
-    if (bar >= 0) { note = s.slice(bar + 1).trim() || null; s = s.slice(0, bar).trim(); }
+    if (bar >= 0) { note = restoreLyricEscapes(s.slice(bar + 1).trim()) || null; s = s.slice(0, bar).trim(); }
     let impact = false;
     if (/[!！]$/.test(s) && s.length > 1 && /!$/.test(s)) { impact = true; s = s.slice(0, -1).trim(); }
     const emph = [];
-    s = s.replace(/\*([^*]+)\*/g, (_, w) => { emph.push(w); return w; });
+    s = s.replace(/\*([^*]+)\*/g, (_, w) => { emph.push(restoreLyricEscapes(w)); return w; });
     let manual = null;
     if (s.includes('/')) {
-      manual = s.split('/').map(x => x.trim()).filter(Boolean);
+      manual = s.split('/').map(x => restoreLyricEscapes(x.trim())).filter(Boolean);
       const latin = manual.some(x => /[A-Za-z]/.test(x));
       s = manual.join(latin ? ' ' : '');
     }
     if (!s) continue;
-    const base = { text: s, note, impact, emph, manual, gapBefore: pendingGap };
+    const base = { text: restoreLyricEscapes(s), note, impact, emph, manual, gapBefore: pendingGap };
     pendingGap = false;
     if (times.length) times.forEach(t => lines.push(Object.assign({}, base, { lrc: t })));
     else lines.push(Object.assign({}, base, { lrc: null }));
   }
-  if (lines.some(l => l.lrc != null)) lines.sort((a, b) => (a.lrc ?? 1e9) - (b.lrc ?? 1e9));
+  if (lines.length && lines.every(l => l.lrc != null)) lines.sort((a, b) => a.lrc - b.lrc);
   return { lines, meta };
 };
 
@@ -160,8 +171,8 @@ J.computeTiming = (project, parsed, audio) => {
   lines.forEach((l, i) => {
     const man = T.lineTimes && T.lineTimes[i] != null ? +T.lineTimes[i] : null;
     let s;
-    if (allLrc) s = l.lrc;
-    else if (man != null && isFinite(man)) s = man;
+    if (man != null && isFinite(man)) s = man;
+    else if (allLrc) s = l.lrc;
     else {
       if (i > 0) {
         const n = [...lines[i - 1].text].length;
@@ -186,6 +197,13 @@ J.computeTiming = (project, parsed, audio) => {
 
 /* ---------------- planning ---------------- */
 const wkey = (obj, k, d = 1) => (obj && obj[k] != null ? obj[k] : d);
+J.lyricArea = area => {
+  if (!area || !['x', 'y', 'w', 'h'].every(k => Number.isFinite(+area[k]))) return null;
+  const w = J.clamp(+area.w, 0.04, 1), h = J.clamp(+area.h, 0.04, 1);
+  return { x: J.clamp(+area.x, 0, 1 - w), y: J.clamp(+area.y, 0, 1 - h), w, h,
+    angle: Number.isFinite(+area.angle) ? J.clamp(+area.angle, -180, 180) : 0,
+    lockAspect: area.lockAspect !== false };
+};
 
 J.plan = (project, audio) => {
   const st = J.resolveStyle(project);
@@ -194,6 +212,13 @@ J.plan = (project, audio) => {
   const title = project.title || parsed.meta.ti || '';
   const artist = project.artist || parsed.meta.ar || '';
   const tm = J.computeTiming(project, parsed, audio);
+  const fixedDuration = Number.isFinite(+project.durationOverride) && +project.durationOverride > 0 ? +project.durationOverride : null;
+  if (fixedDuration != null) {
+    const latestLine = tm.starts.length ? Math.max(...tm.starts) : 0;
+    const latestBlank = Math.max(0, ...(project.lyricBlankCuts || []).map(b => Number.isFinite(+b.start) ? +b.start : 0));
+    tm.duration = Math.max(0.1, fixedDuration, latestLine + 0.04, latestBlank + 0.04);
+    tm.ends = tm.ends.map((end, i) => Math.max(tm.starts[i] + 0.04, Math.min(end, tm.duration)));
+  }
   const [W, H] = J.designSize(project.aspect);
   // enabled map: anything not explicitly switched off is on (new pack entries appear enabled in old projects);
   // then the 追加分 / 和風 switches decide what random picks may use (a per-line override still works)
@@ -232,10 +257,15 @@ J.plan = (project, audio) => {
   parsed.lines.forEach((ln, li) => {
     const s = tm.starts[li], e = tm.ends[li];
     const ov = (project.overrides || {})[li] || {};
+    const area = J.lyricArea(ov.area), layoutW = area ? W * area.w : W, layoutH = area ? H * area.h : H;
     const lineSeed = ov.lock && ov.lockedSeed != null ? ov.lockedSeed : J.h(project.seed, li + 1, ov.seed | 0);
     const rng = J.rng(lineSeed);
     const n = [...ln.text.replace(/\s+/g, '')].length;
-    const visEnd = Math.min(e, s + Math.max(3.6, n * 0.5 + 1.2));
+    const cutTimes = (project.timing && project.timing.cutTimes) || {};
+    const interludeTime = cutTimes[`${li}:interlude`];
+    const naturalVisEnd = Math.min(e, s + Math.max(3.6, n * 0.5 + 1.2));
+    const visEnd = interludeTime != null && Number.isFinite(+interludeTime) && e - s > 1.81
+      ? J.clamp(+interludeTime, s + 0.5, e - 1.31) : naturalVisEnd;
     const D = visEnd - s;
     plan.lines.push({ index: li, text: ln.text, start: s, end: e, visEnd, note: ln.note, impact: ln.impact, emph: ln.emph, chunks: null, seed: lineSeed });
     const chunks = ln.manual || (plan.lang === 'en' ? J.phraseChunks(J.chunkText(ln.text)) : J.chunkText(ln.text));
@@ -256,7 +286,10 @@ J.plan = (project, audio) => {
     const tot = units.reduce((a, u) => a + u.w, 0);
     let acc = s; const bounds = [s];
     units.forEach((u, k) => { acc += D * u.w / tot; bounds.push(k === units.length - 1 ? visEnd : acc); });
-    for (let k = 1; k < bounds.length - 1; k++) bounds[k] = J.clamp(snap(bounds[k]), bounds[k - 1] + 0.22, bounds[k + 1] - 0.22);
+    for (let k = 1; k < bounds.length - 1; k++) {
+      const manual = cutTimes[`${li}:${k}`];
+      bounds[k] = J.clamp(manual != null && Number.isFinite(+manual) ? +manual : snap(bounds[k]), bounds[k - 1] + 0.22, bounds[k + 1] - 0.22);
+    }
     // scheme per line
     if (nSchemes > 1 && li > 0 && rng.chance(fx.bgSwitch * (ln.impact ? 1.8 : 1))) schemeIdx = (schemeIdx + 1 + rng.int(0, nSchemes - 2)) % nSchemes;
     const emphLine = ln.impact || ln.emph.length > 0;
@@ -269,7 +302,7 @@ J.plan = (project, audio) => {
       const txt = u.text;
       const nn = [...txt.replace(/\s+/g, '')].length;
       const emph = ln.impact && (k === 0 || u.recap) || ln.emph.some(w => txt.includes(w));
-      const layout = ov.layout && J.LAYOUTS[ov.layout] ? ov.layout : pickLayout(rng, st, en, nn, dur, history, emph, u.recap, H > W);
+      const layout = ov.layout && J.LAYOUTS[ov.layout] ? ov.layout : pickLayout(rng, st, en, nn, dur, history, emph, u.recap, layoutH > layoutW);
       let enter = ov.enter && J.ENTER[ov.enter] ? ov.enter : pickEnter(rng, st, en, layout, dur, history, emph, nn);
       let exit = ov.exit && J.EXIT[ov.exit] ? ov.exit : pickExit(rng, st, en, layout, dur, k === units.length - 1, history);
       const hold = ov.hold && J.HOLD[ov.hold] ? ov.hold : pickHold(rng, en, fx, history);
@@ -285,7 +318,7 @@ J.plan = (project, audio) => {
       let sch = schemeIdx;
       if (nSchemes > 1 && k > 0 && rng.chance(0.12 * fx.bgSwitch)) sch = (schemeIdx + 1) % nSchemes;
       const LD = J.LAYOUTS[layout];
-      const params = LD.plan(rng, { text: txt, n: nn, W, H, dur }, st);
+      const params = LD.plan(rng, { text: txt, n: nn, W: layoutW, H: layoutH, dur }, st);
       const decor = Array.isArray(ov.decor) ? ov.decor.filter(id => J.DECOR[id]).map(id => decorParams(rng, id)) : pickDecor(rng, st, en, fx, layout, history);
       const treat = ov.treat && J.TREAT[ov.treat] ? ov.treat : pickTreat(rng, st, en, fx, LD, emph, history);
       const treatP = J.TREAT[treat].plan ? J.TREAT[treat].plan(rng, st) : {};
@@ -307,7 +340,7 @@ J.plan = (project, audio) => {
           prevCut.exit = 'cut'; prevCut.outDur = 0;
         }
       }
-      const cut = makeCut({ text: txt, lineText: ln.text, note: ln.note, line: li, start: cs, end: ce, layout, enter, exit, hold, inDur, outDur, params, decor, scheme: sch, seed: J.h(lineSeed, k, 17), emph, recap: !!u.recap, words: J.chunkText(txt), stagger: rng.range(0.025, 0.06),
+      const cut = makeCut({ text: txt, lineText: ln.text, note: ln.note, line: li, part: k, start: cs, end: ce, layout, enter, exit, hold, inDur, outDur, params, decor, scheme: sch, seed: J.h(lineSeed, k, 17), area, frontmost: !!((project.lyricCutOptions || {})[`${li}:${k}`] || {}).frontmost, emph, recap: !!u.recap, words: J.chunkText(txt), stagger: rng.range(0.025, 0.06),
         treat, treatP, bg, bgP: bg === lineBg ? lineBgP : {}, cam, camP, trans, transP, transDur });
       plan.cuts.push(cut);
       history.push({ layout, enter, exit, hold, treat, cam, trans, decor: decor.map(d => d.id) });
@@ -336,10 +369,38 @@ J.plan = (project, audio) => {
     const nextStart = li < parsed.lines.length - 1 ? tm.starts[li + 1] : null;
     if (nextStart != null && nextStart - visEnd > 1.3) {
       const r2 = J.rng(J.h(lineSeed, 404));
-      plan.cuts.push(makeCut({ text: title || '', lineText: '', line: li, start: visEnd, end: nextStart, layout: 'interlude', enter: 'blur', exit: 'blur', hold: 'still', inDur: 0.3, outDur: 0.3, params: J.LAYOUTS.interlude.plan(r2), decor: pickDecor(r2, st, en, Object.assign({}, fx, { decor: 1 }), 'interlude'), scheme: schemeIdx, seed: J.h(lineSeed, 405) }));
+      plan.cuts.push(makeCut({ text: title || '', lineText: '', line: li, part: 'interlude', start: visEnd, end: nextStart, layout: 'interlude', enter: 'blur', exit: 'blur', hold: 'still', inDur: 0.3, outDur: 0.3, params: J.LAYOUTS.interlude.plan(r2), decor: pickDecor(r2, st, en, Object.assign({}, fx, { decor: 1 }), 'interlude'), scheme: schemeIdx, seed: J.h(lineSeed, 405) }));
     }
   });
+  const blanks = (Array.isArray(project.lyricBlankCuts) ? project.lyricBlankCuts : [])
+    .filter(b => b && Number.isFinite(+b.start) && Number.isInteger(+b.beforeLine))
+    .map(b => ({ id: b.id, beforeLine: J.clamp(+b.beforeLine, 0, parsed.lines.length), start: Math.max(0, +b.start) }))
+    .sort((a, b) => a.start - b.start);
+  for (let i = 0; i < blanks.length; i++) {
+    const blank = blanks[i];
+    const nextLine = tm.starts[blank.beforeLine] ?? Infinity;
+    const nextBlank = blanks[i + 1] ? blanks[i + 1].start : Infinity;
+    const end = Math.min(nextLine, nextBlank, plan.duration);
+    if (end - blank.start < 0.04) continue;
+    for (const cut of plan.cuts) {
+      if (cut.start < blank.start && cut.end > blank.start && cut.line < blank.beforeLine) {
+        cut.end = blank.start; cut.dur = cut.end - cut.start;
+      }
+    }
+    plan.cuts = plan.cuts.filter(c => !(c.line < blank.beforeLine && c.start >= blank.start && c.start < end));
+    plan.cuts.push(makeCut({ blank: true, blankId: blank.id, beforeLine: blank.beforeLine, text: '', lineText: '', line: -2, part: 'blank', start: blank.start, end, layout: 'blank', enter: 'cut', exit: 'cut', cam: 'none' }));
+  }
   plan.cuts.sort((a, b) => a.start - b.start);
+  if (fixedDuration != null) {
+    plan.cuts = plan.cuts.filter(c => c.start < plan.duration - 1e-3);
+    for (const cut of plan.cuts) {
+      cut.end = Math.min(cut.end, plan.duration);
+      cut.dur = cut.end - cut.start;
+      cut.inDur = Math.min(cut.inDur, cut.dur * 0.45);
+      cut.outDur = Math.min(cut.outDur, cut.dur * 0.45);
+    }
+    plan.events = plan.events.filter(event => event.t < plan.duration);
+  }
   plan.cuts.forEach((c, i) => { c.index = i; });
   plan.events.sort((a, b) => a.t - b.t);
   plan.energy = audio && audio.energy ? audio.energy : null;

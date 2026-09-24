@@ -59,6 +59,8 @@ async function resample(buffer, sr, duration) {
 
 /* ---------- MP4 ---------- */
 J.exportMP4 = async ({ plan, project, audio, quality = 'high', onProgress, signal }) => {
+  J.mediaTransitionFrame = null;
+  J.foregroundTransitionFrame = null;
   const [w, h] = J.outputSize(project);
   const fps = plan.fps;
   const px = w * h * fps;
@@ -84,6 +86,7 @@ J.exportMP4 = async ({ plan, project, audio, quality = 'high', onProgress, signa
   for (let i = 0; i < total; i++) {
     if (signal && signal.aborted) { try { venc.close(); } catch (e) {} throw new Error('キャンセルしました'); }
     if (err) throw err;
+    await J.prepareMediaFrame(plan, i / fps, signal);
     R.frame(ctx, plan, i / fps, { scale });
     const vf = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
     venc.encode(vf, { keyFrame: i % (fps * 2) === 0 });
@@ -146,6 +149,8 @@ class ZipWriter {
 /* layers: transparent PNGs in two folders — back/ (background graphic + decorations behind the lyrics) and front/
    (lyrics, their decorations, ghosts, HUD). Screen effects are applied to both, so stacking front over back matches. */
 J.exportPNGZip = async ({ plan, project, transparent, layers, onProgress, signal, every = 1 }) => {
+  J.mediaTransitionFrame = null;
+  J.foregroundTransitionFrame = null;
   const [w, h] = J.outputSize(project);
   const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
@@ -156,6 +161,7 @@ J.exportPNGZip = async ({ plan, project, transparent, layers, onProgress, signal
   for (let i = 0; i < total; i += every) {
     if (signal && signal.aborted) throw new Error('キャンセルしました');
     const name = `jizura_${String(i).padStart(5, '0')}.png`;
+    await J.prepareMediaFrame(plan, i / fps, signal);
     for (const layer of layers ? ['back', 'front'] : [null]) {
       R.frame(ctx, plan, i / fps, { scale, transparent: transparent || !!layers, layer });
       const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));

@@ -37,11 +37,11 @@ J.MOODS = {
   for (const [g, map] of Object.entries(extra)) for (const [k, ms] of Object.entries(map)) ms.forEach(m => add(g, k, m));
 })();
 
-J.omakase = (project, rnd = Math.random) => {
+J.omakase = (project, rnd = Math.random, choices = {}) => {
   const pick = a => a[Math.floor(rnd() * a.length) % a.length];
   const range = r => +(r[0] + (r[1] - r[0]) * rnd()).toFixed(2);
   const moods = Object.keys(J.MOODS).filter(k => k !== project.mood);
-  const mood = pick(moods), M = J.MOODS[mood];
+  const mood = J.MOODS[choices.mood] ? choices.mood : pick(moods), M = J.MOODS[mood];
   // style: mostly one that suits the mood, sometimes anything; never the same twice in a row
   // (only styles the 追加分 / 和風 switches allow)
   const okStyle = k => J.STYLES[k] && (!J.randomOk || J.randomOk(project, 'style', k));
@@ -49,7 +49,7 @@ J.omakase = (project, rnd = Math.random) => {
   let pool = (moodStyles.length && rnd() < 0.72 ? moodStyles : J.STYLE_ORDER.filter(okStyle)).filter(k => k !== project.style);
   if (!pool.length) pool = J.STYLE_ORDER.filter(k => k !== project.style && okStyle(k));
   if (!pool.length) pool = J.STYLE_ORDER.filter(k => k !== project.style);
-  const style = pick(pool);
+  const style = J.STYLES[choices.style] ? choices.style : pick(pool);
   const fx = Object.assign({}, project.fx);
   for (const k of Object.keys(M.fx)) fx[k] = range(M.fx[k]);
   fx.koma = pick({ glitch: [12, 12, 8], pop: [12, 12, 8, 0], calm: [0, 0, 12], editorial: [0, 12], emotional: [12, 0], graphic: [12, 12, 0] }[mood] || [12, 8, 0]);
@@ -88,9 +88,12 @@ J.omakase = (project, rnd = Math.random) => {
     Object.assign(colors, J.randomPalette(bg, rnd), { accentOn: true });
     delete colors.mode;
   }
-  // keep locked lines, drop other per-line picks
+  // Keep the user-drawn lyric area even when the line's look is re-rolled.
   const overrides = {};
-  for (const [i, o] of Object.entries(project.overrides || {})) if (o.lock) overrides[i] = o;
+  for (const [i, o] of Object.entries(project.overrides || {})) {
+    if (o.lock) overrides[i] = Object.assign({}, o);
+    else if (o.area) overrides[i] = { area: o.area };
+  }
   return { mood, style, fx, enabled, fonts, colors, overrides, seed: Math.floor(rnd() * 1e9) };
 };
 })();
