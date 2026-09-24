@@ -458,6 +458,11 @@ FORK_MEDIA = dict(FORK_UI, **{
 
 # jAlpha edition additions. Applied before the fork and original glossaries.
 JALPHA_BODY = {
+    'jcreate の配色ライブラリ（P01〜P98）と、書体ライブラリの和文書体も、おまかせと「配色」の振り直しの候補にします': 'Also lets 1-click looks and color re-rolls use the jcreate palette library (P01–P98) and the Japanese faces of the font library',
+    'jcreate の配色ライブラリです。選ぶと、スタイルの配色を丸ごとこの色に置き換えます（読みやすい明るさに自動調整）。同じ配色をもう一度押すと、背景になる色が切り替わります。': 'Palettes from the jcreate library. Picking one replaces all of the style’s colors (brightness is adjusted for readability). Click the same palette again to switch which color is the background.',
+    '配色・書体ライブラリも使う': 'Use the palette & font libraries',
+    '<h3>配色ライブラリ ': '<h3>Palette library ',
+    '>ランダム</button><button id="libPalSwap" class="ghost small" type="button">背景を切り替え</button><button id="libPalClear" class="ghost small" type="button">解除</button>': '>Random</button><button id="libPalSwap" class="ghost small" type="button">Switch background</button><button id="libPalClear" class="ghost small" type="button">Clear</button>',
     'いまの案をお気に入りに追加': 'Add the current look to favorites',
     '☆ お気に入りに追加': '☆ Add to favorites',
     '☆ いまの案を追加': '☆ Add current look',
@@ -473,6 +478,14 @@ JALPHA_BODY = {
 }
 
 JALPHA_UI = {
+    "'未使用（スタイルの配色）'": "'Not used (style colors)'",
+    "c ? libCat(c) : 'すべて'": "c ? libCat(c) : 'All'",
+    '`配色ライブラリ：${val.id}`': '`Palette library: ${val.id}`',
+    "'配色ライブラリ：解除（スタイルの配色）'": "'Palette library: cleared (style colors)'",
+    '`配色ライブラリ：${p.id}（背景を切り替え）`': '`Palette library: ${p.id} (background switched)`',
+    '`配色ライブラリ：${v.id}（背景を切り替え）`': '`Palette library: ${v.id} (background switched)`',
+    "'配色・書体ライブラリ：使う'": "'Palette & font libraries: on'",
+    "'配色・書体ライブラリ：使わない'": "'Palette & font libraries: off'",
     'お気に入りを保存できませんでした（ブラウザの保存容量がいっぱいか、保存が無効です）': 'Could not save favorites (browser storage is full or disabled)',
     '`お気に入りは ${FAV_MAX} 件までです。不要なものを削除してください`': '`You can keep up to ${FAV_MAX} favorites. Delete some you no longer need.`',
     '`お気に入りに追加：${fav.name}`': '`Added to favorites: ${fav.name}`',

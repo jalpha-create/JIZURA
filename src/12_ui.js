@@ -1179,7 +1179,7 @@ function renderFontRoles() {
 const BASE_KEYS = [['bg', '背景'], ['fg', '文字'], ['sub', '補助']];
 const ACCENT_KEYS = [['accent', 'アクセント'], ['ghostA', 'ズレ色A'], ['ghostB', 'ズレ色B']];
 function renderColors() {
-  const st = J.STYLES[S.project.style] || J.STYLES.noir, sc = st.schemes[0];
+  const sc = effScheme0();
   const c = S.project.colors;
   $('colorOn').checked = !!c.enabled;
   $('accentOn').checked = !!c.accentOn;
@@ -1200,6 +1200,7 @@ function renderColors() {
   fill('colorRow', BASE_KEYS, 'enabled');
   fill('colorRowAccent', ACCENT_KEYS, 'accentOn');
   drawSwatch();
+  renderLibPalettes();
 }
 const toColorInput = v => { const h = String(v || '#000000'); return /^#[0-9a-f]{6}$/i.test(h) ? h.toLowerCase() : J.toHex(...J.hex(h)).toLowerCase(); };
 function swatchHTML(cols) { return cols.map(c => `<i style="background:${c}" title="${c}"></i>`).join(''); }
@@ -1210,13 +1211,75 @@ function drawSwatch() {
 function randomPalette() {
   remember();
   const c = S.project.colors;
-  const sc0 = J.STYLES[S.project.style].schemes[0];
+  const sc0 = effScheme0();
   const bg = c.enabled && c.bg ? c.bg : sc0.bg;
   let p, guard = 0;
   do { p = J.randomPalette(bg); } while (guard++ < 6 && p.ghostA === c.ghostA && p.ghostB === c.ghostB);
   Object.assign(c, { accent: p.accent, ghostA: p.ghostA, ghostB: p.ghostB, accentOn: true });
   renderColors(); replan(); commit();
   toast('配色：アクセント・ズレ色A/Bを変更', [p.accent, p.ghostA, p.ghostB]);
+}
+
+/* ---------------- 配色ライブラリ (jAlpha edition, data: src/11r_library.js) ---------------- */
+const LIB_CAT_EN = { 'ビビッド': 'Vivid', 'パステル': 'Pastel', 'ナチュラル': 'Natural', '寒色': 'Cool', '暖色': 'Warm', 'ダーク': 'Dark', 'モノトーン': 'Monotone', 'レトロ': 'Retro' };
+const libEn = () => document.documentElement.lang === 'en';
+const libCat = c => (libEn() ? LIB_CAT_EN[c] || c : c);
+const libPalTitle = p => libEn() ? `${p.id} · ${libCat(p.category)}` : `${p.id} ${p.name}（${p.category}）`;
+let libCatSel = '';
+/* the main scheme as it is drawn now (palette included), for colour pickers and random accents */
+function effScheme0() {
+  const st = J.STYLES[S.project.style] || J.STYLES.noir, c = S.project.colors;
+  return c.palette && J.paletteSchemes ? J.paletteSchemes(c.palette, st.schemes)[0] : st.schemes[0];
+}
+function setLibPalette(val, msg) {
+  remember();
+  const c = S.project.colors;
+  if (val) { c.palette = val; c.accentOn = false; c.enabled = false; } else delete c.palette;
+  renderColors(); replan(); commit();
+  if (val) { const sc = effScheme0(); toast(msg || `配色ライブラリ：${val.id}`, [sc.bg, sc.fg, sc.accent, sc.ghostA, sc.ghostB]); } else toast('配色ライブラリ：解除（スタイルの配色）');
+}
+function pickLibPalette() {
+  const cur = S.project.colors.palette; let v, guard = 0;
+  do { v = J.randomLibPalette(); } while (v && cur && v.id === cur.id && guard++ < 6);
+  if (v) setLibPalette(v);
+}
+function renderLibPalettes() {
+  const grid = $('libPalGrid'), cats = $('libPalCats'); if (!grid || !J.LIB_PALETTES) return;
+  const cur = S.project.colors.palette;
+  if (!grid.childElementCount) {
+    const catList = [...new Set(J.LIB_PALETTES.map(p => p.category))];
+    cats.innerHTML = '';
+    [''].concat(catList).forEach(c => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost small libpal-cat'; b.dataset.cat = c;
+      b.textContent = c ? libCat(c) : 'すべて';
+      b.addEventListener('click', () => { libCatSel = c; renderLibPalettes(); });
+      cats.appendChild(b);
+    });
+    for (const p of J.LIB_PALETTES) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'libpal'; b.dataset.id = p.id; b.dataset.cat = p.category;
+      b.title = libPalTitle(p); b.setAttribute('aria-label', libPalTitle(p));
+      b.innerHTML = `<span class="libpal-sw">${p.colors.map(h => `<i style="background:${h}"></i>`).join('')}</span><span class="libpal-id">${p.id}</span>`;
+      b.addEventListener('click', () => {
+        const now = S.project.colors.palette;
+        if (now && now.id === p.id) setLibPalette(Object.assign({}, now, { v: (now.v | 0) + 1 }), `配色ライブラリ：${p.id}（背景を切り替え）`);
+        else setLibPalette(J.libPaletteValue(p.id, 0));
+      });
+      grid.appendChild(b);
+    }
+  }
+  cats.querySelectorAll('.libpal-cat').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === libCatSel)));
+  grid.querySelectorAll('.libpal').forEach(b => { b.hidden = !!libCatSel && b.dataset.cat !== libCatSel; b.classList.toggle('on', !!cur && cur.id === b.dataset.id); });
+  const p = cur && J.LIB_PALETTE_BY_ID[cur.id];
+  $('libPalNow').textContent = cur ? (p ? libPalTitle(p) : cur.id) : '未使用（スタイルの配色）';
+  $('libPalSwap').disabled = !cur; $('libPalClear').disabled = !cur;
+  $('libPalCount').textContent = `${J.LIB_PALETTES.length}`;
+}
+/* おまかせ: with the library switch on, often dress the new look in a library palette */
+function libOmakase(r) {
+  if (S.project.lib === true && Math.random() < 0.6) {
+    const v = J.randomLibPalette();
+    if (v) { r.colors.palette = v; r.colors.accentOn = false; }
+  } else delete r.colors.palette;
 }
 
 /* ---------------- history of looks (◀ ▶) ---------------- */
@@ -1374,6 +1437,7 @@ function omakase() {
   if (S.exporting || S.tap) return;
   remember();
   const r = J.omakase(S.project);
+  libOmakase(r);
   Object.assign(S.project, r);
   fontKey = ''; syncUI(); replan(); commit();
   toast(`おまかせ：${J.STYLES[r.style].name} × ${J.MOODS[r.mood].name}`, r.colors.accentOn ? [r.colors.accent, r.colors.ghostA, r.colors.ghostB] : null);
@@ -1439,7 +1503,7 @@ function showNow() {
   const row = (k, v) => `<div class="now-row"><span class="k">${k}</span><span class="v">${v}</span></div>`;
   el.innerHTML = row('スタイル', `<b>${escapeHtml(J.STYLES[P.style].name)}</b>`)
     + row('雰囲気', escapeHtml(moodName))
-    + row('配色', `<span class="swatches">${swatchHTML([sc.bg, sc.fg, sc.accent, sc.ghostA, sc.ghostB])}</span>${P.colors.accentOn ? '<span class="tagl">ランダム</span>' : ''}`)
+    + row('配色', `<span class="swatches">${swatchHTML([sc.bg, sc.fg, sc.accent, sc.ghostA, sc.ghostB])}</span>${P.colors.palette ? `<span class="tagl">${escapeHtml(P.colors.palette.id)}</span>` : P.colors.accentOn ? '<span class="tagl">ランダム</span>' : ''}`)
     + row('見出し書体', escapeHtml(fontName))
     + row('構成', `${cuts.length} カット・レイアウト ${kinds} 種`)
     + row('演出', `加工 ${cuts.filter(c => c.treat && c.treat !== 'none').length}・背景 ${new Set(cuts.map(c => c.bg).filter(b => b && b !== 'none')).size}種・カメラ ${cuts.filter(c => c.cam && c.cam !== 'push').length}`);
@@ -1706,6 +1770,7 @@ function syncUI() {
   $('snap').checked = !!S.project.timing.snap;
   document.querySelectorAll('.wa-toggle').forEach(el => { el.checked = S.project.wa !== false; });
   document.querySelectorAll('.extra-toggle').forEach(el => { el.checked = S.project.extra === true; });
+  document.querySelectorAll('.lib-toggle').forEach(el => { el.checked = S.project.lib === true; });
   $('lyricLang').value = J.LANG_LABEL[S.project.lang] ? S.project.lang : 'auto'; langNote();
   renderFontRoles(); renderColors(); renderFx(); renderTech(); syncOut(); drawStyleGrid();
 }
@@ -1958,6 +2023,7 @@ function bind() {
     toast(e.target.checked ? msgOn : msgOff);
   }));
   setSwitch('extra-toggle', 'extra', true, '追加分の演出：使う', '追加分の演出：使わない（最初の公開版の演出だけ）');
+  setSwitch('lib-toggle', 'lib', true, '配色・書体ライブラリ：使う', '配色・書体ライブラリ：使わない');
   setSwitch('wa-toggle', 'wa', true, '和風の演出：使う', '和風の演出：使わない（おまかせ・シャッフルで選ばれません）');
   $('fxKoma').addEventListener('change', e => { const k = +e.target.value; S.project.fx.koma = k; S.project.fx.onTwos = k > 0; S.project.mood = null; replan(); });
   $('fxHud').addEventListener('change', e => { S.project.fx.hud = e.target.value; replan(); });
@@ -1966,7 +2032,7 @@ function bind() {
   const colorToggle = (flag, keys) => e => {
     remember();
     const c = S.project.colors; c[flag] = e.target.checked;
-    if (c[flag]) { const sc0 = J.STYLES[S.project.style].schemes[0]; keys.forEach(([k]) => { if (!c[k]) c[k] = sc0[k]; }); }
+    if (c[flag]) { const sc0 = effScheme0(); keys.forEach(([k]) => { if (!c[k]) c[k] = sc0[k]; }); }
     renderColors(); replan(); commit();
   };
   $('colorOn').addEventListener('change', colorToggle('enabled', BASE_KEYS));
@@ -2019,7 +2085,10 @@ function bind() {
   $('eStyle').addEventListener('click', () => rerollPart('style'));
   $('eMood').addEventListener('click', () => rerollPart('mood'));
   $('eCut').addEventListener('click', () => rerollPart('cut'));
-  $('ePalette').addEventListener('click', () => { randomPalette(); restartPreview(); });
+  $('ePalette').addEventListener('click', () => { if (S.project.lib === true) pickLibPalette(); else randomPalette(); restartPreview(); });
+  $('libPalSwap').addEventListener('click', () => { const v = S.project.colors.palette; if (v) setLibPalette(Object.assign({}, v, { v: (v.v | 0) + 1 }), `配色ライブラリ：${v.id}（背景を切り替え）`); });
+  $('libPalClear').addEventListener('click', () => setLibPalette(null));
+  $('libPalRandom').addEventListener('click', pickLibPalette);
   // 利用について（出力物の権利・ライセンス）
   const dlg = $('termsDlg');
   const openTerms = () => { if (dlg.showModal) { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute('open', ''); };
