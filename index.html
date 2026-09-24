@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>字面 JIZURA（hirazi fork)</title>
+<title>字面 JIZURA（jAlpha edition）</title>
 <meta name="description" content="歌詞を入れると文字PV（リリックモーション）を自動で組み立てて MP4 に書き出すブラウザアプリ">
-<link rel="canonical" href="https://hirazisora.github.io/JIZURA/">
-<link rel="alternate" hreflang="ja" href="https://hirazisora.github.io/JIZURA/">
-<link rel="alternate" hreflang="en" href="https://hirazisora.github.io/JIZURA/en/">
+<link rel="canonical" href="https://jalpha-create.github.io/JIZURA/">
+<link rel="alternate" hreflang="ja" href="https://jalpha-create.github.io/JIZURA/">
+<link rel="alternate" hreflang="en" href="https://jalpha-create.github.io/JIZURA/en/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="字面 JIZURA（hirazi fork)">
+<meta property="og:title" content="字面 JIZURA（jAlpha edition）">
 <meta property="og:description" content="歌詞を入れると文字PV（リリックモーション）を自動で組み立てて MP4 に書き出すブラウザアプリ">
-<meta property="og:url" content="https://hirazisora.github.io/JIZURA/">
+<meta property="og:url" content="https://jalpha-create.github.io/JIZURA/">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -414,7 +414,7 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
 <body>
 <div id="app">
   <header class="bar">
-    <div class="brand"><span class="mark" aria-hidden="true">字面</span><span class="word">JIZURA</span><span class="tag">（hirazi fork)</span></div>
+    <div class="brand"><span class="mark" aria-hidden="true">字面</span><span class="word">JIZURA</span><span class="tag">（jAlpha edition）</span></div>
     <div class="proj">
       <input id="songTitle" type="text" placeholder="曲名（タイトルカード・HUDに表示）" aria-label="曲名">
       <input id="songArtist" type="text" placeholder="アーティスト" aria-label="アーティスト">
@@ -523,7 +523,7 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
         </span>
         <button id="btnShuffle" class="accent" title="設定はそのままで構成だけ再抽選（ロックした行は維持）">シャッフル</button>
         <button id="btnOmakase" class="primary" title="スタイル・雰囲気・演出・配色をまるごとランダムに（キー R）">おまかせ</button>
-        <span class="jev-action"><button id="btnJev" title="歌詞を Jev に送り、スタイルと行ごとの演出を選ぶ">Jevで作る（β）</button><a class="jev-guide" href="https://github.com/hirazisora/JIZURA/blob/main/docs/JEV_GUIDE.md" target="_blank" rel="noopener">Jevの使い方</a></span>
+        <span class="jev-action"><button id="btnJev" title="歌詞を Jev に送り、スタイルと行ごとの演出を選ぶ">Jevで作る（β）</button><a class="jev-guide" href="https://github.com/jalpha-create/JIZURA/blob/main/docs/JEV_GUIDE.md" target="_blank" rel="noopener">Jevの使い方</a></span>
       </div>
       <div id="timelineStack" class="timeline-stack">
         <canvas id="foregroundTimeline" aria-label="前景タイムライン（境界をドラッグして開始時刻を変更、ほかは再生位置を移動）"></canvas>
@@ -541,7 +541,7 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
       <div id="easyPanel" class="easy" hidden>
         <div class="easy-hero">
           <button id="btnOmakaseBig" class="omakase">おまかせで作る</button>
-          <div class="jev-action"><button id="btnJevBig" class="primary">歌詞からJevで作る（β）</button><a class="jev-guide" href="https://github.com/hirazisora/JIZURA/blob/main/docs/JEV_GUIDE.md" target="_blank" rel="noopener">Jevの使い方</a></div>
+          <div class="jev-action"><button id="btnJevBig" class="primary">歌詞からJevで作る（β）</button><a class="jev-guide" href="https://github.com/jalpha-create/JIZURA/blob/main/docs/JEV_GUIDE.md" target="_blank" rel="noopener">Jevの使い方</a></div>
           <p class="hint">Jevを使うと、歌詞を外部APIへ送ってスタイル・雰囲気・行ごとのレイアウトと動きを選びます。ローカルサーバーとAPIキーが必要です。</p>
           <p class="hint">押すたびに、スタイル・雰囲気・動き・配色・構成がまるごと変わります。キーボードの <span class="kbd">R</span> でも実行できます。</p>
           <div class="hist-row">
@@ -678,9 +678,15 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
     </details>
     <p class="muted mono">© 2026 hakoniwa · MIT</p>
     </section>
+    <section class="terms-section terms-fork" aria-labelledby="termsEditionTitle">
+      <h3 id="termsEditionTitle">字面 JIZURA（jAlpha edition）</h3>
+      <p>このサイトは、オリジナル版と hirazi fork を基に機能を追加した改造版です。</p>
+      <p>改造版のソースコード：<a href="https://github.com/jalpha-create/JIZURA" target="_blank" rel="noopener">https://github.com/jalpha-create/JIZURA</a></p>
+      <p class="muted mono">© 2026 jalpha-create · MIT</p>
+    </section>
     <section class="terms-section terms-fork" aria-labelledby="termsForkTitle">
-      <h3 id="termsForkTitle">字面 JIZURA（hirazi fork)</h3>
-      <p>このサイトはオリジナル版を基にしたfork版です。Jevによる構成選定と、背景・前景の画像・動画編集機能などを追加しています。</p>
+      <h3 id="termsForkTitle">取り込み元：字面 JIZURA（hirazi fork)</h3>
+      <p>hirazi fork はオリジナル版を基にしたfork版です。Jevによる構成選定と、背景・前景の画像・動画編集機能などを追加しています。</p>
       <p>通常の編集と書き出しはブラウザ内で処理します。「Jevで作る」を使う場合は、歌詞と任意の追加指示をローカルサーバー経由で Jev API に送信します。曲の音声ファイルは送信しません。</p>
       <p>fork版のソースコード：<a href="https://github.com/hirazisora/JIZURA" target="_blank" rel="noopener">https://github.com/hirazisora/JIZURA</a></p>
       <p class="muted mono">© 2026 hirazisora · MIT</p>
@@ -3877,7 +3883,7 @@ const CORE = {
 const criteria = (keys, table) => Object.fromEntries(keys.filter(k => table[k]).map(k => [k, `${table[k].name}${table[k].tags ? ' / ' + table[k].tags.join(', ') : ''}`]));
 const choice = (instructions, options) => ({ type: 'choice', instructions, criteria: options });
 const valid = (answer, options) => answer && answer.type === 'choice' && Object.hasOwn(options, answer.choice) ? answer.choice : null;
-const endpoint = () => location.origin === 'https://hirazisora.github.io'
+const endpoint = () => location.origin === 'https://jalpha-create.github.io'
   ? 'http://127.0.0.1:8765/api/jev' : '/api/jev';
 
 J.jevSuggest = async (project, signal) => {

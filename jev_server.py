@@ -11,7 +11,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parent
 API_URL = 'https://api.typesafe.ai/v1/systemone'
-PAGES_ORIGIN = 'https://hirazisora.github.io'
+PAGES_ORIGIN = 'https://jalpha-create.github.io'
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):

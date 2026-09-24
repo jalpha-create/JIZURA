@@ -17,7 +17,7 @@ const J = {
   omakase: (project, rnd, choices) => ({ mood: choices.mood, style: choices.style, overrides: { 0: { area: project.overrides[0].area }, 1: { lock: true, layout: 'huge' } } }),
 };
 const requests = [];
-const context = { J, location: { origin: 'https://hirazisora.github.io' }, fetch: async (url, options) => {
+const context = { J, location: { origin: 'https://jalpha-create.github.io' }, fetch: async (url, options) => {
   const payload = JSON.parse(options.body);
   requests.push({ url, payload });
   const answers = {};

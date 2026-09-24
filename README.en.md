@@ -2,9 +2,11 @@
 
 Turn lyrics into animated lyric videos in your browser. JIZURA combines layouts, entrances, holds, exits, decorations, text treatments, backgrounds, camera moves, effects and transitions. Change the seed or press **Create a variation** to explore another arrangement.
 
-**[Open the English fork app](https://hirazisora.github.io/JIZURA/en/)** · [日本語版](https://hirazisora.github.io/JIZURA/) · [Japanese guide](README.md)
+**[Open the English app](https://jalpha-create.github.io/JIZURA/en/)** · [日本語版](https://jalpha-create.github.io/JIZURA/) · [Japanese guide](README.md)
 
-The English and Japanese browser editions share the same project format and saved browser data. Use the language links at the top of the editor to switch editions without changing your lyrics or settings. English After Effects panels are available as [ScriptUI](https://hirazisora.github.io/JIZURA/JIZURA_AE_en.jsx) and [CEP](https://hirazisora.github.io/JIZURA/JIZURA_CEP_en.zip) downloads. The AE JSON format is the same in both languages.
+This jAlpha edition builds on the original [852wa/JIZURA](https://github.com/852wa/JIZURA) and the [hirazisora/JIZURA](https://github.com/hirazisora/JIZURA) fork.
+
+The English and Japanese browser editions share the same project format and saved browser data. Use the language links at the top of the editor to switch editions without changing your lyrics or settings. English After Effects panels are available as [ScriptUI](https://jalpha-create.github.io/JIZURA/JIZURA_AE_en.jsx) and [CEP](https://jalpha-create.github.io/JIZURA/JIZURA_CEP_en.zip) downloads. The AE JSON format is the same in both languages.
 
 ## Features added in this fork
 

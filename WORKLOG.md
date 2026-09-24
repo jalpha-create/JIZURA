@@ -18,3 +18,13 @@
 - 優先順位（ユーザー指定）: ①複数画面比の一括書き出し → ⑤案のお気に入り保存 → ⑦自分用演出パック → ④縦型SNSセーフエリア → ②ブランドキット → ③タイトル/CTAカード。
 - 参考: `hirazisora/JIZURA`（MIT・upstream から37コミット先行／2コミット遅れ）。追加機能は画像・動画の背景/前景レイヤー、クロマキー、行ごとの歌詞表示エリア、タイムライン境界のドラッグ編集、アンドゥ/リドゥ、空カット挿入、Jev（TypeSafe API に歌詞を送る外部AI選定・要APIキー）。
   - `git fetch https://github.com/hirazisora/JIZURA.git main:refs/remotes/hirazi/main` で取得済み。試しにマージすると衝突は src/09_render.js・11_export.js・12_ui.js・app/* と生成物（index.html・CEP zip）。upstream 側の差分は計100行程度で、解消は現実的。
+
+## 2026-09-24 hirazi fork の取り込みと改名
+
+- ユーザー判断で `hirazisora/JIZURA` を丸ごとマージ（ブランチ `merge/hirazi`）。衝突は両方の機能を残す形で解消（詳細はマージコミット）。
+  - 取り込んだ機能: 画像・動画の背景／前景レイヤー、クロマキー、行ごとの歌詞表示エリア、タイムライン境界ドラッグ、アンドゥ／リドゥ、空カット、Jev（β）。
+  - 独自修正: 透過PNGの前景／後景書き出しで、前景素材を後景レイヤーに描かない（`src/09_render.js`）。
+  - 確認: `node dev/media_test.js` `lyric_test.js` `jev_test.js`、`python dev/jev_server_test.py` すべて成功。ブラウザで16:9/9:16/1:1 × 通常・透過・後景・前景の計360フレームを描画して例外なし。日英の画面でコンソールエラーなし。
+- 表記を「jAlpha edition」に変更。公開URL・Jev の接続元を `https://jalpha-create.github.io` に変更。「利用について」には自分の版＋取り込み元（hirazi fork）＋オリジナルのクレジットを併記（MIT の表示条件）。
+- Jev は外部サービス（TypeSafe API）に歌詞を送る。キーを設定して `jev_server.py` を起動しない限り動かない。
+- upstream（852wa）の更新を取り込むときは、hirazi 版で大きく変わった `src/12_ui.js` `src/09_render.js` `app/body.html` が衝突しやすい。

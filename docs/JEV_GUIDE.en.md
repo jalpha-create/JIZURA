@@ -21,7 +21,7 @@ macOS / Linux:
 TYPESAFE_API_KEY='your-key' python3 jev_server.py
 ```
 
-Leave the server running and open the [JIZURA fork](https://hirazisora.github.io/JIZURA/en/). Enter lyrics, optionally add directions below the lyrics box, and press **Create with Jev (β)**. The button is available in both Simple and Advanced modes.
+Leave the server running and open the [JIZURA fork](https://jalpha-create.github.io/JIZURA/en/). Enter lyrics, optionally add directions below the lyrics box, and press **Create with Jev (β)**. The button is available in both Simple and Advanced modes.
 
 From GitHub Pages, your browser connects to `http://127.0.0.1:8765/api/jev` on your computer. Allow local network access if the browser asks. If the Pages connection does not work, open `http://127.0.0.1:8765/en/` on the same computer instead.
 

@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JIZURA (hirazi fork) — Lyric Motion Video Maker</title>
+<title>JIZURA (jAlpha edition) — Lyric Motion Video Maker</title>
 <meta name="description" content="Turn lyrics into animated lyric videos in your browser and export MP4.">
-<link rel="canonical" href="https://hirazisora.github.io/JIZURA/en/">
-<link rel="alternate" hreflang="ja" href="https://hirazisora.github.io/JIZURA/">
-<link rel="alternate" hreflang="en" href="https://hirazisora.github.io/JIZURA/en/">
+<link rel="canonical" href="https://jalpha-create.github.io/JIZURA/en/">
+<link rel="alternate" hreflang="ja" href="https://jalpha-create.github.io/JIZURA/">
+<link rel="alternate" hreflang="en" href="https://jalpha-create.github.io/JIZURA/en/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="JIZURA (hirazi fork) — Lyric Motion Video Maker">
+<meta property="og:title" content="JIZURA (jAlpha edition) — Lyric Motion Video Maker">
 <meta property="og:description" content="Turn lyrics into animated lyric videos in your browser and export MP4.">
-<meta property="og:url" content="https://hirazisora.github.io/JIZURA/en/">
+<meta property="og:url" content="https://jalpha-create.github.io/JIZURA/en/">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -414,7 +414,7 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
 <body>
 <div id="app">
   <header class="bar">
-    <div class="brand"><span class="mark" aria-hidden="true">字面</span><span class="word">JIZURA</span><span class="tag">（hirazi fork)</span></div>
+    <div class="brand"><span class="mark" aria-hidden="true">字面</span><span class="word">JIZURA</span><span class="tag">(jAlpha edition)</span></div>
     <div class="proj">
       <input id="songTitle" type="text" placeholder="Song title (shown on title cards and HUD)" aria-label="Song title">
       <input id="songArtist" type="text" placeholder="Artist" aria-label="Artist">
@@ -523,7 +523,7 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
         </span>
         <button id="btnShuffle" class="accent" title="Shuffle the arrangement, keeping locked lines">Shuffle</button>
         <button id="btnOmakase" class="primary" title="Randomize style, mood, effects and colors (R)">Randomize</button>
-        <span class="jev-action"><button id="btnJev" title="Send lyrics to Jev to choose styles and effects for each line">Create with Jev (β)</button><a class="jev-guide" href="https://github.com/hirazisora/JIZURA/blob/main/docs/JEV_GUIDE.en.md" target="_blank" rel="noopener">Jev guide</a></span>
+        <span class="jev-action"><button id="btnJev" title="Send lyrics to Jev to choose styles and effects for each line">Create with Jev (β)</button><a class="jev-guide" href="https://github.com/jalpha-create/JIZURA/blob/main/docs/JEV_GUIDE.en.md" target="_blank" rel="noopener">Jev guide</a></span>
       </div>
       <div id="timelineStack" class="timeline-stack">
         <canvas id="foregroundTimeline" aria-label="Foreground timeline (drag a cut boundary to change its start time; drag elsewhere to seek)"></canvas>
@@ -541,7 +541,7 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
       <div id="easyPanel" class="easy" hidden>
         <div class="easy-hero">
           <button id="btnOmakaseBig" class="omakase">Create a variation</button>
-          <div class="jev-action"><button id="btnJevBig" class="primary">Create from lyrics with Jev (β)</button><a class="jev-guide" href="https://github.com/hirazisora/JIZURA/blob/main/docs/JEV_GUIDE.en.md" target="_blank" rel="noopener">Jev guide</a></div>
+          <div class="jev-action"><button id="btnJevBig" class="primary">Create from lyrics with Jev (β)</button><a class="jev-guide" href="https://github.com/jalpha-create/JIZURA/blob/main/docs/JEV_GUIDE.en.md" target="_blank" rel="noopener">Jev guide</a></div>
           <p class="hint">Jev sends lyrics to an external API to choose styles, moods, layouts, and motion. A local server and API key are required.</p>
           <p class="hint">Each click changes the style, mood, motion, colors and arrangement. Press <span class="kbd">R</span> to do the same.</p>
           <div class="hist-row">
@@ -678,9 +678,15 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
     </details>
     <p class="muted mono">© 2026 hakoniwa · MIT</p>
     </section>
+    <section class="terms-section terms-fork" aria-labelledby="termsEditionTitle">
+      <h3 id="termsEditionTitle">JIZURA (jAlpha edition)</h3>
+      <p>This site is a modified edition built on the original and the hirazi fork.</p>
+      <p>Source code of this edition: <a href="https://github.com/jalpha-create/JIZURA" target="_blank" rel="noopener">https://github.com/jalpha-create/JIZURA</a></p>
+      <p class="muted mono">© 2026 jalpha-create · MIT</p>
+    </section>
     <section class="terms-section terms-fork" aria-labelledby="termsForkTitle">
-      <h3 id="termsForkTitle">JIZURA (hirazi fork)</h3>
-      <p>This fork builds on the original. It adds Jev-guided arrangement and image and video editing for background and foreground layers.</p>
+      <h3 id="termsForkTitle">Based on: JIZURA (hirazi fork)</h3>
+      <p>The hirazi fork builds on the original. It adds Jev-guided arrangement and image and video editing for background and foreground layers.</p>
       <p>Editing and export run in your browser. When you use Jev, your lyrics and optional directions are sent to the Jev API through a local server. Audio files are not sent.</p>
       <p>Fork source code: <a href="https://github.com/hirazisora/JIZURA" target="_blank" rel="noopener">https://github.com/hirazisora/JIZURA</a></p>
       <p class="muted mono">© 2026 hirazisora · MIT</p>
@@ -3877,7 +3883,7 @@ const CORE = {
 const criteria = (keys, table) => Object.fromEntries(keys.filter(k => table[k]).map(k => [k, `${table[k].name}${table[k].tags ? ' / ' + table[k].tags.join(', ') : ''}`]));
 const choice = (instructions, options) => ({ type: 'choice', instructions, criteria: options });
 const valid = (answer, options) => answer && answer.type === 'choice' && Object.hasOwn(options, answer.choice) ? answer.choice : null;
-const endpoint = () => location.origin === 'https://hirazisora.github.io'
+const endpoint = () => location.origin === 'https://jalpha-create.github.io'
   ? 'http://127.0.0.1:8765/api/jev' : '/api/jev';
 
 J.jevSuggest = async (project, signal) => {

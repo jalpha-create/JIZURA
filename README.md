@@ -1,14 +1,14 @@
 # JIZURA 字面 — 文字PV自動構成ツール
 
-**English edition:** [Open the fork app](https://hirazisora.github.io/JIZURA/en/) · [English guide](README.en.md)
+**English edition:** [Open the app](https://jalpha-create.github.io/JIZURA/en/) · [English guide](README.en.md)
 
-**▶ ブラウザで使う：<https://hirazisora.github.io/JIZURA/>**　／　AE パネル：[JIZURA_AE.jsx をダウンロード](https://hirazisora.github.io/JIZURA/JIZURA_AE.jsx)（リンク先を右クリック →「名前を付けてリンク先を保存」）
+**▶ ブラウザで使う：<https://jalpha-create.github.io/JIZURA/>**　／　AE パネル：[JIZURA_AE.jsx をダウンロード](https://jalpha-create.github.io/JIZURA/JIZURA_AE.jsx)（リンク先を右クリック →「名前を付けてリンク先を保存」）
 
-英語版 AE パネル：[ScriptUI](https://hirazisora.github.io/JIZURA/JIZURA_AE_en.jsx) · [CEP](https://hirazisora.github.io/JIZURA/JIZURA_CEP_en.zip)
+英語版 AE パネル：[ScriptUI](https://jalpha-create.github.io/JIZURA/JIZURA_AE_en.jsx) · [CEP](https://jalpha-create.github.io/JIZURA/JIZURA_CEP_en.zip)
 
 歌詞を入れると、文字PV（リリックモーション）でよく使われる表現を組み合わせてカットを自動で組み立て、MP4 に書き出すブラウザアプリです。レイアウト・動き・装飾・つなぎ・仕上げを 707 の小さな部品（と 24 のスタイル）として持ち、その組み合わせを毎回変えるので、シードを変えれば何度でも別の構成になります。After Effects 用のパネル（スクリプト版と、ブラウザ版の画面をそのまま使える CEP 版）も付属しています。
 
-オリジナル版：[852wa/JIZURA](https://github.com/852wa/JIZURA)
+この版（jAlpha edition）は、オリジナル版 [852wa/JIZURA](https://github.com/852wa/JIZURA) と、それを改造した [hirazisora/JIZURA](https://github.com/hirazisora/JIZURA)（hirazi fork）を基に機能を追加しています。
 
 - 通常の機能はインストール不要。歌詞・曲・書き出しはブラウザ内で処理されます（外部から読み込むのは Google Fonts のフォントだけです）。Jev を使う場合は歌詞を Jev API に送信します。
 - おまかせボタン（キー `R`）で、押すたびにスタイル・雰囲気・動き・配色・構成がまるごと変わります。
@@ -66,7 +66,7 @@ $env:TYPESAFE_API_KEY = 'your-key'
 python jev_server.py
 ```
 
-サーバーを起動したまま、[フォークの Pages](https://hirazisora.github.io/JIZURA/)を開き、「Jevで作る」を押します。Pages から自分の PC の `http://127.0.0.1:8765/api/jev` へ接続します。ブラウザにローカルネットワークへのアクセス許可を求められた場合は許可してください。`http://127.0.0.1:8765/` からも使えます。
+サーバーを起動したまま、[フォークの Pages](https://jalpha-create.github.io/JIZURA/)を開き、「Jevで作る」を押します。Pages から自分の PC の `http://127.0.0.1:8765/api/jev` へ接続します。ブラウザにローカルネットワークへのアクセス許可を求められた場合は許可してください。`http://127.0.0.1:8765/` からも使えます。
 
 API キーはローカルサーバーの環境変数に置き、ブラウザやプロジェクトファイルには保存しません。Jev へ送るのは歌詞・曲名・アーティスト名・任意の追加指示と選択肢です。音声ファイルは送信しません。API が失敗した場合、現在の案は変わりません。
 

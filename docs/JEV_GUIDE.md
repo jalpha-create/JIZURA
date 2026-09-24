@@ -21,7 +21,7 @@ macOS / Linux:
 TYPESAFE_API_KEY='your-key' python3 jev_server.py
 ```
 
-サーバーを起動したまま、[JIZURA フォーク版](https://hirazisora.github.io/JIZURA/)を開いてください。歌詞を入力し、必要なら「Jevへの追加指示」を入力して、「Jevで作る（β）」を押します。かんたんモードにも同じ機能があります。
+サーバーを起動したまま、[JIZURA フォーク版](https://jalpha-create.github.io/JIZURA/)を開いてください。歌詞を入力し、必要なら「Jevへの追加指示」を入力して、「Jevで作る（β）」を押します。かんたんモードにも同じ機能があります。
 
 Pages から実行すると、ブラウザはあなたの PC の `http://127.0.0.1:8765/api/jev` に接続します。ローカルネットワークへのアクセス許可を求められた場合は許可してください。Pages から接続できない場合は、同じ PC で `http://127.0.0.1:8765/` を開いて利用できます。
 

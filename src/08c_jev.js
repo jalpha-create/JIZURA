@@ -10,7 +10,7 @@ const CORE = {
 const criteria = (keys, table) => Object.fromEntries(keys.filter(k => table[k]).map(k => [k, `${table[k].name}${table[k].tags ? ' / ' + table[k].tags.join(', ') : ''}`]));
 const choice = (instructions, options) => ({ type: 'choice', instructions, criteria: options });
 const valid = (answer, options) => answer && answer.type === 'choice' && Object.hasOwn(options, answer.choice) ? answer.choice : null;
-const endpoint = () => location.origin === 'https://hirazisora.github.io'
+const endpoint = () => location.origin === 'https://jalpha-create.github.io'
   ? 'http://127.0.0.1:8765/api/jev' : '/api/jev';
 
 J.jevSuggest = async (project, signal) => {
