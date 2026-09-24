@@ -390,3 +390,12 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
 .stile .badges { position: absolute; top: 4px; left: 4px; padding: 0; display: flex; gap: 3px; }
 .stile .set-badge { margin: 0; padding: 0 4px; font-size: 10px; line-height: 15px; background: rgba(0,0,0,0.55); }
 .stile.set-off { opacity: 0.55; }
+
+/* jAlpha edition: まとめて書き出し */
+.batch-box { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--raised); }
+.batch-h { font-size: 12px; font-weight: 600; }
+.batch-h .muted { font-weight: 400; margin-left: 4px; }
+.batch-aspects { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.batch-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 6px; border: 1px solid var(--line2); border-radius: 999px; font: 500 12px var(--mono); color: var(--muted); cursor: pointer; user-select: none; }
+.batch-chip input { margin: 0; accent-color: var(--amber); }
+.batch-chip:has(input:checked) { border-color: var(--amber); color: var(--text); }

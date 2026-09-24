@@ -409,6 +409,15 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
 .stile .set-badge { margin: 0; padding: 0 4px; font-size: 10px; line-height: 15px; background: rgba(0,0,0,0.55); }
 .stile.set-off { opacity: 0.55; }
 
+/* jAlpha edition: まとめて書き出し */
+.batch-box { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--raised); }
+.batch-h { font-size: 12px; font-weight: 600; }
+.batch-h .muted { font-weight: 400; margin-left: 4px; }
+.batch-aspects { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.batch-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 6px; border: 1px solid var(--line2); border-radius: 999px; font: 500 12px var(--mono); color: var(--muted); cursor: pointer; user-select: none; }
+.batch-chip input { margin: 0; accent-color: var(--amber); }
+.batch-chip:has(input:checked) { border-color: var(--amber); color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -575,7 +584,8 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
             <label class="field">fps<select id="eFps"><option>24</option><option>30</option><option>60</option></select></label>
             <label class="field field-wide">Background<select id="eKey"><option value="off">Style background</option><option value="green">Green screen (compositing)</option><option value="black">Black background (compositing)</option></select></label>
           </div>
-          <div class="outbtns"><button id="eMP4" class="primary">Export MP4</button></div>
+          <div class="outbtns"><button id="eMP4" class="primary">Export MP4</button><button id="eBatchMP4">Batch export</button></div>
+          <div id="eBatchAspects" class="batch-aspects" role="group" aria-label="Aspect ratios for batch export"></div>
           <button class="terms-open linkish">Rights to exported videos</button>
           <div class="exp-box" hidden>
             <div class="progress"><i class="exp-bar"></i></div>
@@ -649,6 +659,11 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
           <button id="btnPNG">PNG sequence (ZIP)</button>
           <button id="btnPNGA">Transparent PNG (ZIP)</button>
           <button id="btnPNGL" title="後景（BackgroundのグラフィックとLyricsの後ろの装飾）とForeground（Lyricsとその装飾・ゴースト）を、別々のフォルダ（back / front）に透過PNGでExportます。画面全体のEffectsは両方にかかるので、Foregroundを後景の上に重ねると通常の見た目になります">透過PNG Foreground／後景（ZIP）</button>
+        </div>
+        <div class="batch-box">
+          <div class="batch-h">Batch export<span class="muted">(re-arranges the video for each selected aspect ratio and saves one MP4 per ratio)</span></div>
+          <div id="batchAspects" class="batch-aspects" role="group" aria-label="Aspect ratios for batch export"></div>
+          <button id="btnBatchMP4">Batch export</button>
         </div>
         <div class="exp-box" hidden style="margin-top:12px">
           <div class="progress"><i class="exp-bar"></i></div>
@@ -31295,15 +31310,84 @@ function syncOut() {
   const kb = $('keyBadge');
   kb.hidden = k === 'off';
   if (k !== 'off') kb.innerHTML = `<i style="background:${J.KEY_BG[k]}"></i>${k === 'green' ? 'Green screen' : 'Black background'}`;
+  renderBatchAspects();
 }
 async function codecNote() {
   const [w, h] = J.outputSize(S.project);
   const vc = await J.pickVideoCodec(w, h, S.project.fps, 12e6);
   $('codecNote').textContent = vc ? `This browser exports with ${vc.label} at (${w}×${h} / ${S.project.fps}fps). Keep this tab open during export.` : 'Video encoding (WebCodecs) is unavailable here. Try the latest Chrome or Edge, or export a PNG sequence.';
-  $('btnMP4').disabled = !vc; $('eMP4').disabled = !vc;
+  $('btnMP4').disabled = !vc; $('eMP4').disabled = !vc; $('btnBatchMP4').disabled = !vc; $('eBatchMP4').disabled = !vc;
   if (!vc) $('eMP4').title = 'MP4 export is unavailable here (Chrome or Edge recommended)';
 }
-const EXP_BTNS = ['btnMP4', 'btnPNG', 'btnPNGA', 'btnPNGL', 'eMP4'];
+const EXP_BTNS = ['btnMP4', 'btnPNG', 'btnPNGA', 'btnPNGL', 'eMP4', 'btnBatchMP4', 'eBatchMP4'];
+
+/* まとめて書き出し (jAlpha edition): one MP4 per selected aspect, each re-planned for that frame from the same project/seed */
+const BATCH_ASPECTS = ['16:9', '9:16', '1:1', '4:5', '4:3', '3:4', '21:9'];
+const BATCH_DEFAULT = ['16:9', '9:16', '1:1'];
+const TALL_MARK = ' portrait';
+function batchAspects() {
+  const a = Array.isArray(S.project.batchAspects) ? S.project.batchAspects : BATCH_DEFAULT;
+  return BATCH_ASPECTS.filter(x => a.includes(x));
+}
+function renderBatchAspects() {
+  const sel = batchAspects();
+  ['batchAspects', 'eBatchAspects'].forEach(id => {
+    const box = $(id); if (!box) return;
+    box.innerHTML = '';
+    for (const a of BATCH_ASPECTS) {
+      const [w, h] = a.split(':').map(Number);
+      const l = document.createElement('label'); l.className = 'batch-chip';
+      const c = document.createElement('input'); c.type = 'checkbox'; c.value = a; c.checked = sel.includes(a);
+      c.addEventListener('change', () => {
+        const cur = new Set(batchAspects()); if (c.checked) cur.add(a); else cur.delete(a);
+        S.project.batchAspects = BATCH_ASPECTS.filter(x => cur.has(x));
+        renderBatchAspects(); flushSave();
+      });
+      l.append(c, document.createTextNode(a + (h > w ? TALL_MARK : '')));
+      box.appendChild(l);
+    }
+  });
+  const n = sel.length;
+  ['btnBatchMP4', 'eBatchMP4'].forEach(id => { const b = $(id); if (b) b.textContent = n ? `Batch export ${n} aspect ratios` : 'Choose aspect ratios for batch export'; });
+}
+async function runBatchExport() {
+  if (S.exporting) return;
+  const list = batchAspects();
+  if (!list.length) { toast('Choose aspect ratios for batch export'); return; }
+  pause();
+  const ac = new AbortController(); S.exporting = ac;
+  const boxes = [...document.querySelectorAll('.exp-box')];
+  const setText = m => boxes.forEach(b => { b.querySelector('.exp-text').textContent = m; });
+  const setBar = p => boxes.forEach(b => { b.querySelector('.exp-bar').style.width = (p * 100).toFixed(1) + '%'; });
+  boxes.forEach(b => { b.hidden = false; }); setBar(0);
+  setText('Preparing…');
+  EXP_BTNS.forEach(id => { $(id).disabled = true; });
+  const t0 = performance.now(), done = [];
+  try {
+    for (let k = 0; k < list.length; k++) {
+      const aspect = list[k], tag = `[${k + 1}/${list.length}] ${aspect}`;
+      const project = Object.assign({}, S.project, { aspect });
+      const plan = aspect === S.project.aspect ? S.plan : J.plan(project, audioLike());
+      setText(`${tag} Preparing…`);
+      await J.ensureFonts(S.project.lyrics + (S.project.title || '') + (S.project.artist || '') + HUD_CHARS, J.fontsOfPlan(plan));
+      const r = await J.exportMP4({
+        plan, project, audio: S.project.includeAudio !== false ? S.audio : null, quality: S.project.quality || 'high', signal: ac.signal,
+        onProgress: (p, m) => { setBar((k + p) / list.length); setText(`${tag} ${m}`); },
+      });
+      const res = await J.saveFile(`${baseName()}_${aspect.replace(':', 'x')}.mp4`, r.blob);
+      done.push(`${aspect} ${(r.blob.size / 1048576).toFixed(1)}MB${res === 'declined' ? ' (save canceled)' : ''}`);
+    }
+    setBar(1);
+    setText(`Done: ${done.join(' · ')} · ${((performance.now() - t0) / 1000).toFixed(0)}s`);
+  } catch (e) {
+    setText('Error: ' + (e && e.message ? e.message : e) + (done.length ? ` (already exported: ${done.join(' · ')})` : ''));
+    console.error(e);
+  } finally {
+    S.exporting = null; S.need = true;
+    EXP_BTNS.forEach(id => { $(id).disabled = false; });
+    codecNote();
+  }
+}
 function baseName() {
   const k = J.keyMode(S.project);
   return ((S.project.title || 'jizura').replace(/[\\/:*?"<>|]+/g, '_').slice(0, 60) || 'jizura') + (k ? (k === 'green' ? '_greenback' : '_blackback') : '');
@@ -31692,6 +31776,7 @@ function bind() {
   $('btnPNGL').addEventListener('click', () => runExport('pngl'));
   document.querySelectorAll('.exp-cancel').forEach(b => b.addEventListener('click', () => { if (S.exporting) S.exporting.abort(); }));
   $('eMP4').addEventListener('click', () => runExport('mp4'));
+  ['btnBatchMP4', 'eBatchMP4'].forEach(id => $(id).addEventListener('click', runBatchExport));
   // かんたんモード
   $('modeEasy').addEventListener('click', () => setMode('easy'));
   $('modePro').addEventListener('click', () => setMode('pro'));

@@ -456,13 +456,32 @@ FORK_MEDIA = dict(FORK_UI, **{
 })
 
 
+# jAlpha edition additions. Applied before the fork and original glossaries.
+JALPHA_BODY = {
+    '（選んだ画面比ごとに構成を組み直して、MP4 を1本ずつ保存します）': '(re-arranges the video for each selected aspect ratio and saves one MP4 per ratio)',
+    'まとめて書き出す画面比': 'Aspect ratios for batch export',
+    'まとめて書き出し': 'Batch export',
+    'まとめて書き出す': 'Batch export',
+}
+
+JALPHA_UI = {
+    '`${n}つの画面比でまとめて書き出す`': '`Batch export ${n} aspect ratios`',
+    'まとめて書き出す画面比を選んでください': 'Choose aspect ratios for batch export',
+    "const TALL_MARK = ' 縦';": "const TALL_MARK = ' portrait';",
+    '（保存キャンセル）': ' (save canceled)',
+    "（書き出し済み: ${done.join('・')}）": " (already exported: ${done.join(' · ')})",
+    "done.join('・')": "done.join(' · ')",
+    '`${tag} 準備中…`': '`${tag} Preparing…`',
+}
+
+
 def localize_body(source):
-    return replace_copy(replace_copy(source, FORK_BODY), BODY).replace('You own the<strong>', 'You own the <strong>')
+    return replace_copy(replace_copy(replace_copy(source, JALPHA_BODY), FORK_BODY), BODY).replace('You own the<strong>', 'You own the <strong>')
 
 
 def localize_js(source, filename):
     if filename.endswith('12_ui.js'):
-        return replace_copy(replace_copy(source, FORK_UI), UI)
+        return replace_copy(replace_copy(replace_copy(source, JALPHA_UI), FORK_UI), UI)
     if filename.endswith('08d_media.js'):
         return replace_copy(source, FORK_MEDIA)
     if filename.endswith('08c_jev.js'):

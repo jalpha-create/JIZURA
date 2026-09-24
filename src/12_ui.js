@@ -1420,15 +1420,84 @@ function syncOut() {
   const kb = $('keyBadge');
   kb.hidden = k === 'off';
   if (k !== 'off') kb.innerHTML = `<i style="background:${J.KEY_BG[k]}"></i>${k === 'green' ? 'グリーンバック' : 'ブラックバック'}`;
+  renderBatchAspects();
 }
 async function codecNote() {
   const [w, h] = J.outputSize(S.project);
   const vc = await J.pickVideoCodec(w, h, S.project.fps, 12e6);
   $('codecNote').textContent = vc ? `このブラウザでは ${vc.label} で書き出します（${w}×${h} / ${S.project.fps}fps）。書き出し中はタブを開いたままにしてください。` : 'このブラウザは動画エンコード（WebCodecs）に対応していません。Chrome / Edge の最新版で開くか、連番PNGを使ってください。';
-  $('btnMP4').disabled = !vc; $('eMP4').disabled = !vc;
+  $('btnMP4').disabled = !vc; $('eMP4').disabled = !vc; $('btnBatchMP4').disabled = !vc; $('eBatchMP4').disabled = !vc;
   if (!vc) $('eMP4').title = 'このブラウザは MP4 書き出しに対応していません（Chrome / Edge 推奨）';
 }
-const EXP_BTNS = ['btnMP4', 'btnPNG', 'btnPNGA', 'btnPNGL', 'eMP4'];
+const EXP_BTNS = ['btnMP4', 'btnPNG', 'btnPNGA', 'btnPNGL', 'eMP4', 'btnBatchMP4', 'eBatchMP4'];
+
+/* まとめて書き出し (jAlpha edition): one MP4 per selected aspect, each re-planned for that frame from the same project/seed */
+const BATCH_ASPECTS = ['16:9', '9:16', '1:1', '4:5', '4:3', '3:4', '21:9'];
+const BATCH_DEFAULT = ['16:9', '9:16', '1:1'];
+const TALL_MARK = ' 縦';
+function batchAspects() {
+  const a = Array.isArray(S.project.batchAspects) ? S.project.batchAspects : BATCH_DEFAULT;
+  return BATCH_ASPECTS.filter(x => a.includes(x));
+}
+function renderBatchAspects() {
+  const sel = batchAspects();
+  ['batchAspects', 'eBatchAspects'].forEach(id => {
+    const box = $(id); if (!box) return;
+    box.innerHTML = '';
+    for (const a of BATCH_ASPECTS) {
+      const [w, h] = a.split(':').map(Number);
+      const l = document.createElement('label'); l.className = 'batch-chip';
+      const c = document.createElement('input'); c.type = 'checkbox'; c.value = a; c.checked = sel.includes(a);
+      c.addEventListener('change', () => {
+        const cur = new Set(batchAspects()); if (c.checked) cur.add(a); else cur.delete(a);
+        S.project.batchAspects = BATCH_ASPECTS.filter(x => cur.has(x));
+        renderBatchAspects(); flushSave();
+      });
+      l.append(c, document.createTextNode(a + (h > w ? TALL_MARK : '')));
+      box.appendChild(l);
+    }
+  });
+  const n = sel.length;
+  ['btnBatchMP4', 'eBatchMP4'].forEach(id => { const b = $(id); if (b) b.textContent = n ? `${n}つの画面比でまとめて書き出す` : 'まとめて書き出す画面比を選んでください'; });
+}
+async function runBatchExport() {
+  if (S.exporting) return;
+  const list = batchAspects();
+  if (!list.length) { toast('まとめて書き出す画面比を選んでください'); return; }
+  pause();
+  const ac = new AbortController(); S.exporting = ac;
+  const boxes = [...document.querySelectorAll('.exp-box')];
+  const setText = m => boxes.forEach(b => { b.querySelector('.exp-text').textContent = m; });
+  const setBar = p => boxes.forEach(b => { b.querySelector('.exp-bar').style.width = (p * 100).toFixed(1) + '%'; });
+  boxes.forEach(b => { b.hidden = false; }); setBar(0);
+  setText('準備中…');
+  EXP_BTNS.forEach(id => { $(id).disabled = true; });
+  const t0 = performance.now(), done = [];
+  try {
+    for (let k = 0; k < list.length; k++) {
+      const aspect = list[k], tag = `[${k + 1}/${list.length}] ${aspect}`;
+      const project = Object.assign({}, S.project, { aspect });
+      const plan = aspect === S.project.aspect ? S.plan : J.plan(project, audioLike());
+      setText(`${tag} 準備中…`);
+      await J.ensureFonts(S.project.lyrics + (S.project.title || '') + (S.project.artist || '') + HUD_CHARS, J.fontsOfPlan(plan));
+      const r = await J.exportMP4({
+        plan, project, audio: S.project.includeAudio !== false ? S.audio : null, quality: S.project.quality || 'high', signal: ac.signal,
+        onProgress: (p, m) => { setBar((k + p) / list.length); setText(`${tag} ${m}`); },
+      });
+      const res = await J.saveFile(`${baseName()}_${aspect.replace(':', 'x')}.mp4`, r.blob);
+      done.push(`${aspect} ${(r.blob.size / 1048576).toFixed(1)}MB${res === 'declined' ? '（保存キャンセル）' : ''}`);
+    }
+    setBar(1);
+    setText(`完成 ${done.join('・')}・${((performance.now() - t0) / 1000).toFixed(0)}秒`);
+  } catch (e) {
+    setText('エラー: ' + (e && e.message ? e.message : e) + (done.length ? `（書き出し済み: ${done.join('・')}）` : ''));
+    console.error(e);
+  } finally {
+    S.exporting = null; S.need = true;
+    EXP_BTNS.forEach(id => { $(id).disabled = false; });
+    codecNote();
+  }
+}
 function baseName() {
   const k = J.keyMode(S.project);
   return ((S.project.title || 'jizura').replace(/[\\/:*?"<>|]+/g, '_').slice(0, 60) || 'jizura') + (k ? (k === 'green' ? '_greenback' : '_blackback') : '');
@@ -1817,6 +1886,7 @@ function bind() {
   $('btnPNGL').addEventListener('click', () => runExport('pngl'));
   document.querySelectorAll('.exp-cancel').forEach(b => b.addEventListener('click', () => { if (S.exporting) S.exporting.abort(); }));
   $('eMP4').addEventListener('click', () => runExport('mp4'));
+  ['btnBatchMP4', 'eBatchMP4'].forEach(id => $(id).addEventListener('click', runBatchExport));
   // かんたんモード
   $('modeEasy').addEventListener('click', () => setMode('easy'));
   $('modePro').addEventListener('click', () => setMode('pro'));
