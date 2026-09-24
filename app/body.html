@@ -103,6 +103,7 @@
         <span class="vol"><button id="btnMute" class="ghost small" aria-pressed="false" title="クリックで消音／解除（プレビューだけ。書き出しの音量は変わりません）">音量</button><input id="vol" type="range" min="0" max="100" value="80" aria-label="プレビューの音量"></span>
         <span class="undo-btns"><button id="btnUndo" class="ghost small" type="button" title="元に戻す（Ctrl+Z）" disabled>↶ 元に戻す</button><button id="btnRedo" class="ghost small" type="button" title="やり直す（Ctrl+Shift+Z）" disabled>↷ やり直す</button></span>
         <span class="hist-btns">
+          <button id="btnFav" class="ghost small icon-txt fav-star" title="いまの案をお気に入りに追加" aria-label="いまの案をお気に入りに追加">☆</button>
           <button id="btnPrev" class="ghost small icon-txt" title="前の案に戻る" aria-label="前の案">◀</button>
           <button id="btnNext" class="ghost small icon-txt" title="次の案へ進む" aria-label="次の案">▶</button>
         </span>
@@ -144,6 +145,10 @@
           <div id="easyNow" class="now"></div>
         </div>
         <div class="easy-sec">
+          <div class="fav-h"><h3>お気に入り <span id="eFavCount" class="muted mono"></span></h3><button id="eFavAdd" class="ghost small">☆ お気に入りに追加</button></div>
+          <div id="eFavList" class="fav-list"></div>
+        </div>
+        <div class="easy-sec">
           <h3>ここだけ変える</h3>
           <div class="easy-grid">
             <button id="eStyle" title="スタイルだけ別のものに">スタイル</button>
@@ -177,6 +182,11 @@
       </nav>
 
       <div class="tabpane" data-pane="style">
+        <details class="fav-box" open>
+          <summary>お気に入り <span id="favCount" class="muted mono"></span></summary>
+          <div class="fav-tools"><button id="favAdd" class="small">☆ いまの案を追加</button><button id="favExport" class="ghost small" title="お気に入りをファイルに保存（別のブラウザやPCへ移すとき）">ファイルに保存</button><button id="favImport" class="ghost small" title="保存したお気に入りのファイルを読み込んで追加">読み込む</button><input id="favFile" type="file" accept=".json,application/json" hidden></div>
+          <div id="favList" class="fav-list"></div>
+        </details>
         <div id="styleGrid" class="style-grid"></div>
         <h3>フォントの役割</h3>
         <div id="fontRoles"></div>

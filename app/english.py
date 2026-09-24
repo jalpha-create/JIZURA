@@ -458,6 +458,14 @@ FORK_MEDIA = dict(FORK_UI, **{
 
 # jAlpha edition additions. Applied before the fork and original glossaries.
 JALPHA_BODY = {
+    'いまの案をお気に入りに追加': 'Add the current look to favorites',
+    '☆ お気に入りに追加': '☆ Add to favorites',
+    '☆ いまの案を追加': '☆ Add current look',
+    'お気に入りをファイルに保存（別のブラウザやPCへ移すとき）': 'Save favorites to a file (to move them to another browser or PC)',
+    '保存したお気に入りのファイルを読み込んで追加': 'Load a saved favorites file and add its looks',
+    'ファイルに保存': 'Save to file',
+    '読み込む': 'Load',
+    'お気に入り': 'Favorites',
     '（選んだ画面比ごとに構成を組み直して、MP4 を1本ずつ保存します）': '(re-arranges the video for each selected aspect ratio and saves one MP4 per ratio)',
     'まとめて書き出す画面比': 'Aspect ratios for batch export',
     'まとめて書き出し': 'Batch export',
@@ -465,6 +473,24 @@ JALPHA_BODY = {
 }
 
 JALPHA_UI = {
+    'お気に入りを保存できませんでした（ブラウザの保存容量がいっぱいか、保存が無効です）': 'Could not save favorites (browser storage is full or disabled)',
+    '`お気に入りは ${FAV_MAX} 件までです。不要なものを削除してください`': '`You can keep up to ${FAV_MAX} favorites. Delete some you no longer need.`',
+    '`お気に入りに追加：${fav.name}`': '`Added to favorites: ${fav.name}`',
+    'このお気に入りのスタイルが見つかりません（別の版で作ったお気に入りかもしれません）': 'This favorite uses a style that is not available (it may come from another edition)',
+    "`お気に入り：${f.name}${sameLyrics ? '' : '（行ごとの指定は今の歌詞のまま）'}`": "`Favorite: ${f.name}${sameLyrics ? '' : ' (per-line settings kept for the current lyrics)'}`",
+    '`お気に入り「${f.name}」を削除しますか？`': '`Delete the favorite \u201c${f.name}\u201d?`',
+    '気に入った案を「☆ お気に入りに追加」で残すと、ここからいつでも呼び戻せます。別の曲にも使えます。': 'Use \u201c☆ Add to favorites\u201d to keep looks you like. Bring them back here any time, even for other songs.',
+    '`「${f.name}」の見た目にする`': '`Use the look \u201c${f.name}\u201d`',
+    '`「${f.name}」の名前を変える`': '`Rename \u201c${f.name}\u201d`',
+    '`「${f.name}」を削除`': '`Delete \u201c${f.name}\u201d`',
+    "'名前を変える'": "'Rename'", "'お気に入りの名前'": "'Favorite name'", "del.title = '削除'": "del.title = 'Delete'",
+    '`${FAV.list.length}件`': '`${FAV.list.length}`',
+    'お気に入りがまだありません': 'No favorites yet',
+    '新しいお気に入りはありませんでした（すべて登録済みです）': 'No new favorites (all of them are already here)',
+    'お気に入りのファイルではありません': 'This is not a favorites file',
+    "'無題'": "'Untitled'",
+    '`お気に入りを ${Math.min(add.length, FAV_MAX - before.length)} 件読み込みました`': '`Loaded ${Math.min(add.length, FAV_MAX - before.length)} favorites`',
+    "'読み込めませんでした：'": "'Could not load: '",
     '`${n}つの画面比でまとめて書き出す`': '`Batch export ${n} aspect ratios`',
     'まとめて書き出す画面比を選んでください': 'Choose aspect ratios for batch export',
     "const TALL_MARK = ' 縦';": "const TALL_MARK = ' portrait';",

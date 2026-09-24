@@ -1252,6 +1252,122 @@ function updateHist() {
   $('histPos').textContent = H.list.length > 1 ? `${H.i + 1} / ${H.list.length}` : '';
 }
 
+/* ---------------- お気に入り (jAlpha edition) ----------------
+   named looks (the same keys as ◀ ▶) kept in this browser, so a look can be reused on other songs.
+   Per-line overrides belong to the lyrics they were made for: they come back only when the lyrics match. */
+const FAV_KEY = 'jizura.favorites.v1', FAV_MAX = 100;
+const FAV = { list: [] };
+const lyricsKey = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + s.length; };
+function loadFavs() {
+  try { const a = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); FAV.list = Array.isArray(a) ? a.filter(f => f && f.id && f.look) : []; } catch (e) { FAV.list = []; }
+}
+function saveFavs() {
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(FAV.list)); return true; }
+  catch (e) { toast('お気に入りを保存できませんでした（ブラウザの保存容量がいっぱいか、保存が無効です）'); return false; }
+}
+async function favThumb() {
+  if (!S.plan) return '';
+  try {
+    const cuts = S.plan.cuts.filter(c => c.line >= 0 && c.layout !== 'interlude');
+    const c = cuts[0] || S.plan.cuts[0];
+    const t = c ? c.start + (c.end - c.start) * 0.6 : 0;
+    const cv = document.createElement('canvas'); cv.width = 240; cv.height = Math.max(1, Math.round(240 * S.plan.H / S.plan.W));
+    await J.prepareMediaFrame(S.plan, t);
+    new J.Renderer().frame(cv.getContext('2d'), S.plan, t, { scale: cv.width / S.plan.W });
+    return cv.toDataURL('image/jpeg', 0.72);
+  } catch (e) { console.warn(e); return ''; }
+}
+async function addFav() {
+  if (S.exporting) return;
+  if (FAV.list.length >= FAV_MAX) { toast(`お気に入りは ${FAV_MAX} 件までです。不要なものを削除してください`); return; }
+  const P = S.project;
+  const moodName = P.mood && J.MOODS[P.mood] ? J.MOODS[P.mood].name : 'カスタム';
+  const fav = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: `${J.STYLES[P.style] ? J.STYLES[P.style].name : P.style} × ${moodName}`,
+    created: Date.now(), look: JSON.parse(lookSnap()), lyricsKey: lyricsKey(P.lyrics || ''), aspect: P.aspect,
+    thumb: await favThumb(),
+  };
+  FAV.list.unshift(fav);
+  if (!saveFavs()) { FAV.list.shift(); return; }
+  renderFavs();
+  toast(`お気に入りに追加：${fav.name}`);
+}
+function applyFav(id) {
+  if (S.exporting || S.tap) return;
+  const f = FAV.list.find(x => x.id === id); if (!f) return;
+  if (!J.STYLES[f.look.style]) { toast('このお気に入りのスタイルが見つかりません（別の版で作ったお気に入りかもしれません）'); return; }
+  const look = Object.assign({}, f.look);
+  const sameLyrics = f.lyricsKey === lyricsKey(S.project.lyrics || '');
+  if (!sameLyrics) delete look.overrides;
+  for (const k of Object.keys(look)) if (look[k] === null && k !== 'mood') delete look[k];
+  remember();
+  Object.assign(S.project, look);
+  fontKey = ''; syncUI(); replan(); commit();
+  toast(`お気に入り：${f.name}${sameLyrics ? '' : '（行ごとの指定は今の歌詞のまま）'}`);
+  restartPreview();
+}
+function renameFav(id, name) {
+  const f = FAV.list.find(x => x.id === id); if (!f) return;
+  name = String(name || '').trim().slice(0, 60);
+  if (!name || name === f.name) { renderFavs(); return; }
+  f.name = name; saveFavs(); renderFavs();
+}
+function deleteFav(id) {
+  const f = FAV.list.find(x => x.id === id); if (!f) return;
+  if (!confirm(`お気に入り「${f.name}」を削除しますか？`)) return;
+  FAV.list = FAV.list.filter(x => x.id !== id); saveFavs(); renderFavs();
+}
+function renderFavs() {
+  ['favList', 'eFavList'].forEach(boxId => {
+    const box = $(boxId); if (!box) return;
+    box.innerHTML = '';
+    if (!FAV.list.length) { const p = document.createElement('p'); p.className = 'hint fav-empty'; p.textContent = '気に入った案を「☆ お気に入りに追加」で残すと、ここからいつでも呼び戻せます。別の曲にも使えます。'; box.appendChild(p); return; }
+    for (const f of FAV.list) {
+      const card = document.createElement('div'); card.className = 'fav-card';
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'fav-thumb'; btn.title = `「${f.name}」の見た目にする`;
+      if (f.thumb) { const img = document.createElement('img'); img.src = f.thumb; img.alt = ''; btn.appendChild(img); } else btn.textContent = '字面';
+      btn.addEventListener('click', () => applyFav(f.id));
+      const row = document.createElement('div'); row.className = 'fav-row';
+      const name = document.createElement('span'); name.className = 'fav-name'; name.textContent = f.name; name.title = f.name;
+      const ren = document.createElement('button'); ren.type = 'button'; ren.className = 'ghost small icon-txt'; ren.textContent = '✎'; ren.title = '名前を変える'; ren.setAttribute('aria-label', `「${f.name}」の名前を変える`);
+      ren.addEventListener('click', () => {
+        const inp = document.createElement('input'); inp.type = 'text'; inp.value = f.name; inp.maxLength = 60; inp.className = 'fav-name-input'; inp.setAttribute('aria-label', 'お気に入りの名前');
+        let done = false; const fin = ok => { if (done) return; done = true; if (ok) renameFav(f.id, inp.value); else renderFavs(); };
+        inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') fin(true); else if (e.key === 'Escape') fin(false); });
+        inp.addEventListener('blur', () => fin(true));
+        name.replaceWith(inp); inp.focus(); inp.select();
+      });
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'ghost small icon-txt'; del.textContent = '×'; del.title = '削除'; del.setAttribute('aria-label', `「${f.name}」を削除`);
+      del.addEventListener('click', () => deleteFav(f.id));
+      row.append(name, ren, del);
+      card.append(btn, row); box.appendChild(card);
+    }
+  });
+  ['favCount', 'eFavCount'].forEach(id => { const el = $(id); if (el) el.textContent = FAV.list.length ? `${FAV.list.length}件` : ''; });
+}
+async function exportFavs() {
+  if (!FAV.list.length) { toast('お気に入りがまだありません'); return; }
+  const data = JSON.stringify({ app: 'jizura', kind: 'favorites', version: 1, favorites: FAV.list });
+  await J.saveFile('jizura_favorites.json', new Blob([data], { type: 'application/json' }));
+}
+async function importFavs(file) {
+  try {
+    const d = JSON.parse(await file.text());
+    const list = Array.isArray(d) ? d : d && Array.isArray(d.favorites) ? d.favorites : null;
+    if (!list) throw new Error('お気に入りのファイルではありません');
+    const have = new Set(FAV.list.map(f => f.id));
+    const add = list.filter(f => f && f.id && f.look && typeof f.look === 'object' && !have.has(f.id))
+      .map(f => ({ id: String(f.id), name: String(f.name || '無題').slice(0, 60), created: +f.created || Date.now(), look: f.look, lyricsKey: String(f.lyricsKey || ''), aspect: f.aspect, thumb: typeof f.thumb === 'string' && f.thumb.startsWith('data:image/') ? f.thumb : '' }));
+    if (!add.length) { toast('新しいお気に入りはありませんでした（すべて登録済みです）'); return; }
+    const before = FAV.list;
+    FAV.list = before.concat(add).slice(0, FAV_MAX);
+    if (!saveFavs()) { FAV.list = before; return; }
+    renderFavs();
+    toast(`お気に入りを ${Math.min(add.length, FAV_MAX - before.length)} 件読み込みました`);
+  } catch (e) { toast('読み込めませんでした：' + (e.message || e)); }
+}
+
 /* ---------------- おまかせ ---------------- */
 function restartPreview() { seek(0); if (!S.playing && S.mode === 'easy') play(); }
 function omakase() {
@@ -1887,6 +2003,10 @@ function bind() {
   document.querySelectorAll('.exp-cancel').forEach(b => b.addEventListener('click', () => { if (S.exporting) S.exporting.abort(); }));
   $('eMP4').addEventListener('click', () => runExport('mp4'));
   ['btnBatchMP4', 'eBatchMP4'].forEach(id => $(id).addEventListener('click', runBatchExport));
+  ['btnFav', 'favAdd', 'eFavAdd'].forEach(id => $(id).addEventListener('click', addFav));
+  $('favExport').addEventListener('click', exportFavs);
+  $('favImport').addEventListener('click', () => $('favFile').click());
+  $('favFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importFavs(f); e.target.value = ''; });
   // かんたんモード
   $('modeEasy').addEventListener('click', () => setMode('easy'));
   $('modePro').addEventListener('click', () => setMode('pro'));
@@ -1950,7 +2070,7 @@ function boot() {
   S.project = loadLocal();
   cleanupDeletedMedia();
   initUndo();
-  bind(); initVolume(); syncUI(); replan();
+  bind(); initVolume(); loadFavs(); renderFavs(); syncUI(); replan();
   restoreMediaAssets();
   let mode = 'easy'; try { mode = localStorage.getItem('jizura.mode') || 'easy'; } catch (e) {}
   setMode(mode); commit();

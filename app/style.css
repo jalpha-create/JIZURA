@@ -399,3 +399,22 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
 .batch-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 6px; border: 1px solid var(--line2); border-radius: 999px; font: 500 12px var(--mono); color: var(--muted); cursor: pointer; user-select: none; }
 .batch-chip input { margin: 0; accent-color: var(--amber); }
 .batch-chip:has(input:checked) { border-color: var(--amber); color: var(--text); }
+
+/* jAlpha edition: お気に入り */
+.fav-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fav-h h3 { margin: 0; }
+.easy-sec .fav-h + .fav-list { margin-top: 8px; }
+.fav-box { margin-bottom: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--raised); padding: 8px 10px; }
+.fav-box summary { cursor: pointer; font-size: 12px; font-weight: 600; }
+.fav-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.fav-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; max-height: 320px; overflow-y: auto; }
+.fav-empty { grid-column: 1 / -1; margin: 0; }
+.fav-card { display: grid; gap: 3px; min-width: 0; }
+.fav-thumb { padding: 0; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--line2); border-radius: 6px; background: var(--ink); color: var(--muted); font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.fav-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fav-thumb:hover, .fav-thumb:focus-visible { border-color: var(--amber); }
+.fav-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.fav-name { flex: 1; min-width: 0; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-name-input { flex: 1; min-width: 0; font-size: 11px; padding: 1px 4px; }
+.fav-row .icon-txt { padding: 0 4px; min-width: 0; height: 20px; font-size: 11px; }
+.fav-star { color: var(--amber); }
