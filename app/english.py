@@ -315,6 +315,16 @@ def replace_copy(source, glossary):
 # Fork UI text is translated before the original glossary so short common
 # words such as 歌詞 and 追加 cannot split a longer fork label in half.
 FORK_BODY = {
+    'タイムラインを縮小': 'Zoom timeline out', 'タイムラインを拡大': 'Zoom timeline in',
+    '動画サイズ': 'Video size', '画面比と解像度から指定': 'Use aspect ratio and resolution',
+    '自由入力': 'Custom size', '幅（px）': 'Width (px)', '高さ（px）': 'Height (px)',
+    'フルHD': 'Full HD', '縦型': 'Portrait', '正方形': 'Square',
+    'PCのフォントを一覧表示': 'List installed fonts', '選択したフォントを取り込む': 'Import selected font',
+    'PCのフォント': 'Installed fonts', '合成フォントを保存': 'Save composite font',
+    '合成フォント': 'Composite fonts', '設定名': 'Name', 'ベースになるフォント': 'Base font',
+    'ベースを使用': 'Use base font', 'ひらがな・カタカナ': 'Hiragana / Katakana',
+    '漢字': 'Kanji', '記号': 'Symbols', '半角数字': 'Half-width digits',
+    '半角アルファベット': 'Half-width Latin', '約物': 'Punctuation', '外字': 'Gaiji',
     '末尾の◀▶をドラッグして全体の長さを変更。再生時間の分母をクリックして直接入力。鎖マークを別のタイムラインの鎖へドラッグしてリンク。×で解除。': 'Drag ◀▶ at the end to change the total duration, or click the duration beside playback time to enter it. Drag a chain icon to one on another timeline to link boundaries; use × to unlink.',
     '動画全体の長さ（秒または分:秒、空欄で自動）': 'Total video duration (seconds or mm:ss; blank for auto)',
     '動画全体の長さを入力（空欄で自動）': 'Enter total video duration (blank for auto)',
@@ -373,6 +383,12 @@ FORK_BODY = {
 }
 
 FORK_UI = {
+    'このブラウザではPCフォント一覧を取得できません': 'This browser cannot list installed fonts',
+    'PCフォント一覧の取得が許可されませんでした': 'Access to installed fonts was denied',
+    'フォントが見つかりませんでした': 'No fonts were found',
+    '設定名とベースフォントを指定してください': 'Enter a name and choose a base font',
+    'ベースを使用': 'Use base font',
+    'タップするたびに素材をループしてカットを追加します。終了するまで続けられます。': 'Each tap adds a cut, cycling through the files. Continue until you stop.',
     '${cut.line + 1}行目${cut.part + 1}カット目を最前に表示': 'Show line ${cut.line + 1}, cut ${cut.part + 1} above foreground',
     '${i + 1}行目${c.part + 1}カット目を最前に表示': 'Show line ${i + 1}, cut ${c.part + 1} above foreground',
     '最前に表示': 'Show above foreground',
@@ -393,12 +409,13 @@ FORK_UI = {
     '手動で追加したカットでは素材を個別に指定します': 'Choose a file for each manually added cut',
     '${index + 1}番目にカットを追加': 'Insert cut at position ${index + 1}',
     '＋ カットを追加': '+ Add cut',
+    '${i + 1}カット目を削除': 'Remove cut ${i + 1}',
     '${i + 1}カット目の素材': 'File for cut ${i + 1}',
     'タップするたびに画像無しのカットを追加します。終了するまで続けられます。': 'Each tap adds a cut with no image. Continue until you stop.',
     '前景': 'Foreground', '角度': 'Rotation', 'クロマキー': 'Chroma key',
     '表示方法': 'Display mode',
     "chip('l', '表示',": "chip('l', 'Display',",
-    '<option value="">おまかせ</option>': '<option value="">Auto</option>',
+    '<option value="">自動</option>': '<option value="">Auto</option>',
     '<label>色<input': '<label>Color<input',
     'フォントを読み込めませんでした': 'Could not load fonts',
     'プロジェクトを読み込めませんでした': 'Could not load project',

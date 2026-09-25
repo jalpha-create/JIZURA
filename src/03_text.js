@@ -157,6 +157,7 @@ J.drawItem = (env, it) => {
     const a = baseAlpha * (c && c.a != null ? c.a : 1);
     if (a <= 0.002) continue;
     const ch = (c && c.ch) || g.ch;
+    if (J.FONTS[it.font]?.composite) ctx.font = J.fontCSS(it.font, size, ch);
     const cs = c && c.s != null ? c.s : 1;
     const gx = g.x * sx + g.vx * sx + (c ? c.dx || 0 : 0);
     const gy = g.y * sy + g.vy * sy + (c ? c.dy || 0 : 0);

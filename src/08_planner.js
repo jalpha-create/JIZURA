@@ -219,7 +219,7 @@ J.plan = (project, audio) => {
     tm.duration = Math.max(0.1, fixedDuration, latestLine + 0.04, latestBlank + 0.04);
     tm.ends = tm.ends.map((end, i) => Math.max(tm.starts[i] + 0.04, Math.min(end, tm.duration)));
   }
-  const [W, H] = J.designSize(project.aspect);
+  const [W, H] = J.designSize(project);
   // enabled map: anything not explicitly switched off is on (new pack entries appear enabled in old projects);
   // then the 追加分 / 和風 switches decide what random picks may use (a per-line override still works)
   const en = {};
@@ -556,7 +556,13 @@ function pickFx(rng, st, en, fx, emph, fxHist, kind) {
   return cands.length ? rng.wpick(cands) : null;
 }
 
-J.designSize = (aspect) => {
+J.designSize = (input) => {
+  const project = typeof input === 'object' && input ? input : null;
+  if (project && project.videoSize && Number.isFinite(+project.videoSize.w) && Number.isFinite(+project.videoSize.h) && +project.videoSize.w >= 16 && +project.videoSize.h >= 16) {
+    const w = +project.videoSize.w, h = +project.videoSize.h;
+    return [1920 * w / Math.max(w, h), 1920 * h / Math.max(w, h)];
+  }
+  const aspect = project ? project.aspect : input;
   if (aspect === '9:16') return [1080, 1920];
   if (aspect === '1:1') return [1440, 1440];
   if (aspect === '4:5') return [1440, 1800];
@@ -566,6 +572,7 @@ J.designSize = (aspect) => {
   return [1920, 1080];
 };
 J.outputSize = (project) => {
+  if (project.videoSize && Number.isFinite(+project.videoSize.w) && Number.isFinite(+project.videoSize.h) && +project.videoSize.w >= 16 && +project.videoSize.h >= 16) return [J.clamp(Math.round(+project.videoSize.w / 2) * 2, 16, 8192), J.clamp(Math.round(+project.videoSize.h / 2) * 2, 16, 8192)];
   const [W, H] = J.designSize(project.aspect);
   const k = (project.res || 1080) / Math.min(W, H);
   return [Math.round(W * k / 2) * 2, Math.round(H * k / 2) * 2];

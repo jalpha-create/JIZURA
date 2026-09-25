@@ -39,6 +39,68 @@ J.GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&f
 J.addUserFont = (key, label, family, weight = 400, kind = 'custom') => {
   J.FONTS[key] = { label, family: `"${family.replace(/"/g, '')}"`, weight, kind, fb: JP_SANS_FB, user: true };
   J.glyphs.clear();
+  J.metrics.clear();
+};
+J.COMPOSITE_PARTS = {
+  kana: 'ひらがな・カタカナ', kanji: '漢字', symbols: '記号', digits: '半角数字', latin: '半角アルファベット', punctuation: '約物', gaiji: '外字',
+};
+J.compositeCategory = ch => {
+  const cp = ch.codePointAt(0);
+  if (/[0-9]/.test(ch) && cp < 128) return 'digits';
+  if (/[A-Za-z]/.test(ch) && cp < 128) return 'latin';
+  if (/[、。，．・「」『』（）［］｛｝〈〉《》【】〔〕！？!?,.:;…―\-]/u.test(ch)) return 'punctuation';
+  if (/[\u3040-\u30ff\u31f0-\u31ff\uff66-\uff9f]/u.test(ch)) return 'kana';
+  if (/[\u3400-\u9fff\uf900-\ufaff\u{20000}-\u{3134f}]/u.test(ch)) return 'kanji';
+  if (/[\p{Co}\p{Cs}\u{e0000}-\u{e007f}]/u.test(ch)) return 'gaiji';
+  return 'symbols';
+};
+J.fontForChar = (key, ch) => {
+  const composite = J.FONTS[key]?.composite;
+  if (!composite) return key;
+  const selected = composite.parts[J.compositeCategory(ch)];
+  return selected && J.FONTS[selected] && !J.FONTS[selected].composite ? selected : composite.base;
+};
+J.setCompositeFonts = definitions => {
+  for (const [key, face] of Object.entries(J.FONTS)) if (face.composite) delete J.FONTS[key];
+  for (const def of definitions || []) {
+    if (!def || !/^composite_[\w-]+$/.test(def.key) || !J.FONTS[def.base] || J.FONTS[def.base].composite) continue;
+    const base = J.FONTS[def.base];
+    J.FONTS[def.key] = { ...base, label: def.name, user: true, composite: { base: def.base, parts: def.parts || {} } };
+  }
+  J.glyphs.clear(); J.metrics.clear();
+};
+const fontDatabase = () => new Promise((resolve, reject) => {
+  if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+  const request = indexedDB.open('jizura-fonts-v1', 1);
+  request.onupgradeneeded = () => request.result.createObjectStore('files');
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error);
+});
+J.saveFontFile = async (key, file) => {
+  const db = await fontDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').put(file, key);
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    });
+  } finally { db.close(); }
+};
+J.restoreFontFiles = async userFonts => {
+  const files = (userFonts || []).filter(font => font.file);
+  if (!files.length) return;
+  const db = await fontDatabase();
+  try {
+    for (const font of files) {
+      const blob = await new Promise((resolve, reject) => {
+        const tx = db.transaction('files'); const request = tx.objectStore('files').get(font.key);
+        request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+      });
+      if (!blob) continue;
+      const face = new FontFace(font.family, await blob.arrayBuffer());
+      await face.load(); document.fonts.add(face);
+    }
+    J.glyphs.clear(); J.metrics.clear();
+  } finally { db.close(); }
 };
 J.loadFontFile = async (file) => {
   const buf = await file.arrayBuffer();
@@ -47,10 +109,13 @@ J.loadFontFile = async (file) => {
   await ff.load(); document.fonts.add(ff);
   const key = 'user_' + fam;
   J.addUserFont(key, file.name.replace(/\.[^.]+$/, ''), fam, 400, 'custom');
+  await J.saveFontFile(key, file).catch(() => {});
   return key;
 };
 
-J.fontCSS = (key, px) => {
+J.fontCSS = (key, px, ch) => {
+  if (ch != null) key = J.fontForChar(key, ch);
+  else if (J.FONTS[key]?.composite) key = J.FONTS[key].composite.base;
   const f = J.faceOf ? J.faceOf(key) : (J.FONTS[key] || J.FONTS.gothic_bold);   // per-language face (02b_lang.js)
   return `${f.weight} ${px.toFixed(2)}px ${f.family},${f.fb}`;
 };
@@ -79,7 +144,11 @@ J.fontsOfPlan = (plan) => {
     if (typeof v === 'string' && J.FONTS[v]) set.add(v);
     else if (Array.isArray(v)) v.forEach(x => { if (typeof x === 'string' && J.FONTS[x]) set.add(x); });
   }
-  return [...set].filter(k => J.FONTS[k]);
+  for (const key of [...set]) {
+    const composite = J.FONTS[key]?.composite;
+    if (composite) { set.add(composite.base); Object.values(composite.parts).forEach(part => set.add(part)); }
+  }
+  return [...set].filter(k => J.FONTS[k] && !J.FONTS[k].composite);
 };
 /* make sure the glyphs we need are loaded (Google Fonts are unicode-range split). keys = null → every catalogue face */
 J.ensureFonts = async (text, keys) => {
@@ -111,7 +180,7 @@ J.metrics = {
     const k = fontKey + '\u0000' + ch;
     let v = this.m.get(k);
     if (v === undefined) {
-      _mc.font = J.fontCSS(fontKey, 100);
+      _mc.font = J.fontCSS(fontKey, 100, ch);
       v = _mc.measureText(ch).width / 100;
       if (!(v > 0)) v = ch === ' ' ? 0.3 : 1;
       this.m.set(k, v);
@@ -130,6 +199,7 @@ class GlyphCache {
   clear() { this.map.clear(); this.tint.clear(); }
   bucket(px) { let r = 64; while (r < px && r < this.maxRes) r *= 2; return r; }
   get(fontKey, ch, px) {
+    fontKey = J.fontForChar(fontKey, ch);
     const res = this.bucket(px);
     const key = fontKey + '|' + ch + '|' + res;
     let g = this.map.get(key);

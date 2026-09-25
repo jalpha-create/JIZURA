@@ -52,7 +52,7 @@
         <div id="mediaList" class="media-list"></div>
         <label class="check"><input id="mediaRandom" type="checkbox"><span>ランダム順で表示</span></label>
         <label class="check"><input id="mediaLoop" type="checkbox"><span>ループ表示<small>素材を順に繰り返し、素材数より多いカットを作成できます</small></span></label>
-        <label class="field" id="mediaCutCountField" hidden>カット数<input id="mediaCutCount" type="number" min="1" max="1000" step="1" inputmode="numeric"></label>
+        <label class="field" id="mediaCutCountField" hidden>カット数<input id="mediaCutCount" type="number" min="0" max="1000" step="1" inputmode="numeric"></label>
         <div id="foregroundBlendFields" class="fields media-blend-fields" hidden>
           <label class="field">前景の合成方法<select id="mediaBlend"><option value="normal">通常</option><option value="multiply">乗算</option><option value="screen">スクリーン</option></select></label>
           <label class="field">前景不透明度（％）<input id="mediaOpacity" type="number" min="0" max="100" step="1"></label>
@@ -112,13 +112,14 @@
         <button id="btnOmakase" class="primary" title="スタイル・雰囲気・演出・配色をまるごとランダムに（キー R）">おまかせ</button>
         <span class="jev-action"><button id="btnJev" title="歌詞を Jev に送り、スタイルと行ごとの演出を選ぶ">Jevで作る（β）</button><a class="jev-guide" href="https://github.com/jalpha-create/JIZURA/blob/main/docs/JEV_GUIDE.md" target="_blank" rel="noopener">Jevの使い方</a></span>
       </div>
-      <div id="timelineStack" class="timeline-stack">
+      <div class="timeline-zoom"><button id="timelineZoomOut" type="button" aria-label="タイムラインを縮小">−</button><span id="timelineZoomValue" aria-live="polite">100%</span><button id="timelineZoomIn" type="button" aria-label="タイムラインを拡大">＋</button></div>
+      <div id="timelineScroll" class="timeline-scroll"><div id="timelineStack" class="timeline-stack">
         <canvas id="foregroundTimeline" aria-label="前景タイムライン（境界をドラッグして開始時刻を変更、ほかは再生位置を移動）"></canvas>
         <canvas id="timeline" aria-label="歌詞タイムライン（境界をドラッグして開始時刻を変更、ほかは再生位置を移動）"></canvas>
         <canvas id="mediaTimeline" aria-label="背景タイムライン（境界をドラッグして開始時刻を変更、ほかは再生位置を移動）"></canvas>
         <svg id="timelineLinks" class="timeline-links" aria-label="タイムラインの境界リンク"></svg>
         <button id="timelineDurationHandle" class="timeline-duration-handle" type="button" title="ドラッグして動画全体の長さを変更" aria-label="動画全体の長さをドラッグして変更"><span aria-hidden="true">◀▶</span></button>
-      </div>
+      </div></div>
       <p class="hint timeline-link-hint">末尾の◀▶をドラッグして全体の長さを変更。再生時間の分母をクリックして直接入力。鎖マークを別のタイムラインの鎖へドラッグしてリンク。×で解除。</p>
       <div class="cutinfo" id="cutInfo"></div>
     </section>
@@ -168,6 +169,8 @@
           <div class="fields">
             <label class="field">画面比<select id="eAspect"><option value="16:9">16:9</option><option value="9:16">9:16 縦</option><option value="4:3">4:3</option><option value="3:4">3:4 縦</option><option value="1:1">1:1</option><option value="4:5">4:5 縦</option><option value="21:9">21:9</option></select></label>
             <label class="field">解像度<select id="eRes"><option value="720">720p</option><option value="1080">1080p</option><option value="1440">1440p</option><option value="2160">4K</option></select></label>
+            <label class="field field-wide">動画サイズ<select id="eVideoSize"><option value="legacy">画面比と解像度から指定</option><option value="1920x1080">1920 × 1080（フルHD）</option><option value="1280x720">1280 × 720（HD）</option><option value="3840x2160">3840 × 2160（4K）</option><option value="1080x1920">1080 × 1920（縦型）</option><option value="1080x1080">1080 × 1080（正方形）</option><option value="1080x1350">1080 × 1350（4:5）</option><option value="custom">自由入力</option></select></label>
+            <label class="field video-size-custom" hidden>幅（px）<input id="eVideoWidth" type="number" min="16" max="8192" step="2"></label><label class="field video-size-custom" hidden>高さ（px）<input id="eVideoHeight" type="number" min="16" max="8192" step="2"></label>
             <label class="field">fps<select id="eFps"><option>24</option><option>30</option><option>60</option></select></label>
             <label class="field field-wide">背景<select id="eKey"><option value="off">通常（スタイルの背景）</option><option value="green">グリーンバック（合成用）</option><option value="black">ブラックバック（合成用）</option></select></label>
           </div>
@@ -207,6 +210,8 @@
           <button id="btnAddFont">追加</button>
         </div>
         <div class="row" style="margin-top:8px"><label class="file">フォントファイル（.ttf/.otf）<input id="fontFile" type="file" accept=".ttf,.otf,.woff,.woff2"></label></div>
+        <div class="row font-import" style="margin-top:8px"><button id="btnListFonts" type="button">PCのフォントを一覧表示</button><select id="installedFonts" aria-label="PCのフォント" hidden></select><button id="btnImportFont" type="button" hidden>選択したフォントを取り込む</button></div>
+        <h3>合成フォント</h3><div class="composite-font"><label>設定名<input id="compositeName" type="text" maxlength="60"></label><label>ベースになるフォント<select id="compositeBase"></select></label><div id="compositeParts"></div><button id="btnSaveComposite" type="button">合成フォントを保存</button><div id="compositeList"></div></div>
         <h3>アクセント・ズレ色</h3>
         <label class="check"><input id="accentOn" type="checkbox"><span>自分の色で上書き<small>全シーンに適用。背景に合わせて明るさを自動調整します</small></span></label>
         <div class="color-row" id="colorRowAccent"></div>
@@ -252,6 +257,8 @@
         <div class="fields">
           <label class="field">画面比<select id="outAspect"><option value="16:9">16:9</option><option value="9:16">9:16 縦</option><option value="4:3">4:3</option><option value="3:4">3:4 縦</option><option value="1:1">1:1</option><option value="4:5">4:5 縦</option><option value="21:9">21:9</option></select></label>
           <label class="field">解像度<select id="outRes"><option value="720">720p</option><option value="1080">1080p</option><option value="1440">1440p</option><option value="2160">4K</option></select></label>
+          <label class="field field-wide">動画サイズ<select id="outVideoSize"><option value="legacy">画面比と解像度から指定</option><option value="1920x1080">1920 × 1080（フルHD）</option><option value="1280x720">1280 × 720（HD）</option><option value="3840x2160">3840 × 2160（4K）</option><option value="1080x1920">1080 × 1920（縦型）</option><option value="1080x1080">1080 × 1080（正方形）</option><option value="1080x1350">1080 × 1350（4:5）</option><option value="custom">自由入力</option></select></label>
+          <label class="field video-size-custom" hidden>幅（px）<input id="outVideoWidth" type="number" min="16" max="8192" step="2"></label><label class="field video-size-custom" hidden>高さ（px）<input id="outVideoHeight" type="number" min="16" max="8192" step="2"></label>
           <label class="field">fps<select id="outFps"><option>24</option><option>30</option><option>60</option></select></label>
           <label class="field">画質<select id="outQuality"><option value="standard">標準</option><option value="high">高</option><option value="max">最高</option></select></label>
           <label class="field field-wide">背景<select id="outKey"><option value="off">通常（スタイルの背景）</option><option value="green">グリーンバック（合成用）</option><option value="black">ブラックバック（合成用）</option></select></label>

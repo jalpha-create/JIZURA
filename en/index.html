@@ -139,6 +139,8 @@ button.tap { font: 700 18px/1 var(--mono); letter-spacing: 0.2em; padding: 16px;
 .media-cut-insert { display: flex; justify-content: center; }
 .media-cut-insert button { width: 100%; padding: 2px 8px; border-style: dashed; color: var(--muted); font-size: 11px; }
 .media-cut-insert button:hover { color: var(--amber); border-color: var(--amber); }
+button.remove-media-cut { color: #fff; background: #a82535; border-color: #c93645; }
+button.remove-media-cut:hover, button.remove-media-cut:focus-visible { color: #fff; background: #c93645; border-color: #f05a68; }
 .media-ln .meta { grid-column: 2 / 4; grid-row: 2; flex-wrap: wrap; }
 .media-ln .tools { flex-wrap: wrap; flex: 1; }
 .ln { display: grid; grid-template-columns: 22px 66px minmax(0, 1fr); gap: 4px 6px; align-items: center; padding: 6px; border: 1px solid transparent; border-radius: var(--r); }
@@ -185,6 +187,7 @@ button.tap { font: 700 18px/1 var(--mono); letter-spacing: 0.2em; padding: 16px;
 .viewport canvas { display: block; width: 100%; height: auto; max-height: 68vh; object-fit: contain; }
 .area-edit-overlay { position: absolute; z-index: 4; cursor: crosshair; touch-action: none; background: rgba(0,0,0,0.32); }
 .area-edit-rect { position: absolute; box-sizing: border-box; border: 2px solid var(--amber); background: rgba(245,165,12,0.12); box-shadow: 0 0 0 1px #000; pointer-events: none; }
+:root { --rotate-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M25 13a10 10 0 1 0 1 7' fill='none' stroke='%23ffffff' stroke-width='4'/%3E%3Cpath d='M25 13a10 10 0 1 0 1 7' fill='none' stroke='%23101620' stroke-width='2'/%3E%3Cpath d='M23 4v10h8' fill='none' stroke='%23ffffff' stroke-width='4'/%3E%3Cpath d='M23 4v10h8' fill='none' stroke='%23101620' stroke-width='2'/%3E%3C/svg%3E") 16 16, crosshair; }
 .area-edit-overlay.media-edit { background: rgba(0,0,0,0.14); cursor: default; }
 .area-edit-overlay.media-edit .area-edit-rect { background: rgba(245,165,12,0.04); pointer-events: auto; cursor: move; }
 .area-edit-overlay.media-edit .area-edit-rect::before { content: ''; position: absolute; inset: -18px; border: 1px dashed var(--cyan); pointer-events: none; }
@@ -229,6 +232,10 @@ button.play { width: 40px; height: 34px; padding: 0; font-size: 14px; }
 #mediaTimeline { width: 100%; height: 52px; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; touch-action: none; }
 #foregroundTimeline { width: 100%; height: 52px; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; touch-action: none; }
 .timeline-stack { position: relative; display: grid; gap: 6px; min-width: 0; }
+.timeline-scroll { width: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; padding-right: 8px; padding-bottom: 6px; }
+.timeline-zoom { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font: 11px var(--mono); color: var(--muted); }
+.timeline-zoom button { min-width: 27px; min-height: 25px; padding: 2px 6px; }
+.timeline-zoom span { min-width: 44px; text-align: center; }
 .timeline-duration-handle { position: absolute; z-index: 3; top: 0; right: -7px; bottom: 0; width: 15px; padding: 0; border: 0; border-left: 2px solid var(--amber); border-radius: 0; background: rgba(245,165,12,.08); color: var(--amber); cursor: ew-resize; touch-action: none; }
 .timeline-duration-handle:hover, .timeline-duration-handle:focus-visible, .timeline-duration-handle.dragging { background: rgba(245,165,12,.22); }
 .timeline-duration-handle span { position: absolute; top: 50%; left: -13px; transform: translateY(-50%); font: 10px var(--mono); background: var(--panel); pointer-events: none; }
@@ -295,6 +302,12 @@ button.play { width: 40px; height: 34px; padding: 0; font-size: 14px; }
 .color-row label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
 .color-row input[type=color] { width: 100%; height: 28px; padding: 0; border: 1px solid var(--line); background: transparent; border-radius: var(--r); }
 .font-row { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; align-items: center; margin-bottom: 6px; font-size: 12px; }
+.font-import select { min-width: 0; flex: 1 1 150px; }
+.composite-font { display: grid; gap: 8px; font-size: 12px; }
+.composite-font label { display: grid; gap: 3px; color: var(--muted); }
+.composite-font input, .composite-font select { width: 100%; }
+#compositeParts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.composite-saved { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); }
 .progress { height: 6px; background: var(--raised2); border-radius: 3px; overflow: hidden; }
 .progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--amber)); }
 .outbtns { display: grid; gap: 8px; margin-top: 12px; }
@@ -534,7 +547,7 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
         <div id="mediaList" class="media-list"></div>
         <label class="check"><input id="mediaRandom" type="checkbox"><span>Shuffle order</span></label>
         <label class="check"><input id="mediaLoop" type="checkbox"><span>Loop cuts<small>Repeat the files in order and create more cuts than files.</small></span></label>
-        <label class="field" id="mediaCutCountField" hidden>Number of cuts<input id="mediaCutCount" type="number" min="1" max="1000" step="1" inputmode="numeric"></label>
+        <label class="field" id="mediaCutCountField" hidden>Number of cuts<input id="mediaCutCount" type="number" min="0" max="1000" step="1" inputmode="numeric"></label>
         <div id="foregroundBlendFields" class="fields media-blend-fields" hidden>
           <label class="field">Foreground blend mode<select id="mediaBlend"><option value="normal">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option></select></label>
           <label class="field">Foreground opacity (%)<input id="mediaOpacity" type="number" min="0" max="100" step="1"></label>
@@ -594,13 +607,14 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
         <button id="btnOmakase" class="primary" title="Randomize style, mood, effects and colors (R)">Randomize</button>
         <span class="jev-action"><button id="btnJev" title="Send lyrics to Jev to choose styles and effects for each line">Create with Jev (β)</button><a class="jev-guide" href="https://github.com/jalpha-create/JIZURA/blob/main/docs/JEV_GUIDE.en.md" target="_blank" rel="noopener">Jev guide</a></span>
       </div>
-      <div id="timelineStack" class="timeline-stack">
+      <div class="timeline-zoom"><button id="timelineZoomOut" type="button" aria-label="Zoom timeline out">−</button><span id="timelineZoomValue" aria-live="polite">100%</span><button id="timelineZoomIn" type="button" aria-label="Zoom timeline in">＋</button></div>
+      <div id="timelineScroll" class="timeline-scroll"><div id="timelineStack" class="timeline-stack">
         <canvas id="foregroundTimeline" aria-label="Foreground timeline (drag a cut boundary to change its start time; drag elsewhere to seek)"></canvas>
         <canvas id="timeline" aria-label="Lyrics timeline (drag a cut boundary to change its start time; drag elsewhere to seek)"></canvas>
         <canvas id="mediaTimeline" aria-label="Background timeline (drag a cut boundary to change its start time; drag elsewhere to seek)"></canvas>
         <svg id="timelineLinks" class="timeline-links" aria-label="Timeline boundary links"></svg>
         <button id="timelineDurationHandle" class="timeline-duration-handle" type="button" title="Drag to change total video duration" aria-label="Drag to change total video duration"><span aria-hidden="true">◀▶</span></button>
-      </div>
+      </div></div>
       <p class="hint timeline-link-hint">Drag ◀▶ at the end to change the total duration, or click the duration beside playback time to enter it. Drag a chain icon to one on another timeline to link boundaries; use × to unlink.</p>
       <div class="cutinfo" id="cutInfo"></div>
     </section>
@@ -650,6 +664,8 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
           <div class="fields">
             <label class="field">Aspect ratio<select id="eAspect"><option value="16:9">16:9</option><option value="9:16">9:16 portrait</option><option value="4:3">4:3</option><option value="3:4">3:4 portrait</option><option value="1:1">1:1</option><option value="4:5">4:5 portrait</option><option value="21:9">21:9</option></select></label>
             <label class="field">Resolution<select id="eRes"><option value="720">720p</option><option value="1080">1080p</option><option value="1440">1440p</option><option value="2160">4K</option></select></label>
+            <label class="field field-wide">Video size<select id="eVideoSize"><option value="legacy">Use aspect ratio and resolution</option><option value="1920x1080">1920 × 1080（Full HD）</option><option value="1280x720">1280 × 720（HD）</option><option value="3840x2160">3840 × 2160（4K）</option><option value="1080x1920">1080 × 1920（Portrait）</option><option value="1080x1080">1080 × 1080（Square）</option><option value="1080x1350">1080 × 1350（4:5）</option><option value="custom">Custom size</option></select></label>
+            <label class="field video-size-custom" hidden>Width (px)<input id="eVideoWidth" type="number" min="16" max="8192" step="2"></label><label class="field video-size-custom" hidden>Height (px)<input id="eVideoHeight" type="number" min="16" max="8192" step="2"></label>
             <label class="field">fps<select id="eFps"><option>24</option><option>30</option><option>60</option></select></label>
             <label class="field field-wide">Background<select id="eKey"><option value="off">Style background</option><option value="green">Green screen (compositing)</option><option value="black">Black background (compositing)</option></select></label>
           </div>
@@ -685,10 +701,12 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
         <h3>Font roles</h3>
         <div id="fontRoles"></div>
         <div class="row" style="margin-top:8px">
-          <input id="localFont" type="text" placeholder="Installed font name (e.g. Arial)" style="flex:1">
+          <input id="localFont" type="text" placeholder="Installed fonts名（例: 游明朝）" style="flex:1">
           <button id="btnAddFont">Add</button>
         </div>
         <div class="row" style="margin-top:8px"><label class="file">Font file (.ttf/.otf)<input id="fontFile" type="file" accept=".ttf,.otf,.woff,.woff2"></label></div>
+        <div class="row font-import" style="margin-top:8px"><button id="btnListFonts" type="button">List installed fonts</button><select id="installedFonts" aria-label="Installed fonts" hidden></select><button id="btnImportFont" type="button" hidden>Import selected font</button></div>
+        <h3>Composite fonts</h3><div class="composite-font"><label>Name<input id="compositeName" type="text" maxlength="60"></label><label>Base font<select id="compositeBase"></select></label><div id="compositeParts"></div><button id="btnSaveComposite" type="button">Save composite font</button><div id="compositeList"></div></div>
         <h3>Accent and offset colors</h3>
         <label class="check"><input id="accentOn" type="checkbox"><span>Use custom colors<small>Applies to every scene. Brightness adapts to the background.</small></span></label>
         <div class="color-row" id="colorRowAccent"></div>
@@ -734,6 +752,8 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
         <div class="fields">
           <label class="field">Aspect ratio<select id="outAspect"><option value="16:9">16:9</option><option value="9:16">9:16 portrait</option><option value="4:3">4:3</option><option value="3:4">3:4 portrait</option><option value="1:1">1:1</option><option value="4:5">4:5 portrait</option><option value="21:9">21:9</option></select></label>
           <label class="field">Resolution<select id="outRes"><option value="720">720p</option><option value="1080">1080p</option><option value="1440">1440p</option><option value="2160">4K</option></select></label>
+          <label class="field field-wide">Video size<select id="outVideoSize"><option value="legacy">Use aspect ratio and resolution</option><option value="1920x1080">1920 × 1080（Full HD）</option><option value="1280x720">1280 × 720（HD）</option><option value="3840x2160">3840 × 2160（4K）</option><option value="1080x1920">1080 × 1920（Portrait）</option><option value="1080x1080">1080 × 1080（Square）</option><option value="1080x1350">1080 × 1350（4:5）</option><option value="custom">Custom size</option></select></label>
+          <label class="field video-size-custom" hidden>Width (px)<input id="outVideoWidth" type="number" min="16" max="8192" step="2"></label><label class="field video-size-custom" hidden>Height (px)<input id="outVideoHeight" type="number" min="16" max="8192" step="2"></label>
           <label class="field">fps<select id="outFps"><option>24</option><option>30</option><option>60</option></select></label>
           <label class="field">Quality<select id="outQuality"><option value="standard">Standard</option><option value="high">High</option><option value="max">Maximum</option></select></label>
           <label class="field field-wide">Background<select id="outKey"><option value="off">Style background</option><option value="green">Green screen (compositing)</option><option value="black">Black background (compositing)</option></select></label>
@@ -1058,6 +1078,68 @@ J.GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Dela+Gothic+One&f
 J.addUserFont = (key, label, family, weight = 400, kind = 'custom') => {
   J.FONTS[key] = { label, family: `"${family.replace(/"/g, '')}"`, weight, kind, fb: JP_SANS_FB, user: true };
   J.glyphs.clear();
+  J.metrics.clear();
+};
+J.COMPOSITE_PARTS = {
+  kana: 'ひらがな・カタカナ', kanji: '漢字', symbols: '記号', digits: '半角数字', latin: '半角アルファベット', punctuation: '約物', gaiji: '外字',
+};
+J.compositeCategory = ch => {
+  const cp = ch.codePointAt(0);
+  if (/[0-9]/.test(ch) && cp < 128) return 'digits';
+  if (/[A-Za-z]/.test(ch) && cp < 128) return 'latin';
+  if (/[、。，．・「」『』（）［］｛｝〈〉《》【】〔〕！？!?,.:;…―\-]/u.test(ch)) return 'punctuation';
+  if (/[\u3040-\u30ff\u31f0-\u31ff\uff66-\uff9f]/u.test(ch)) return 'kana';
+  if (/[\u3400-\u9fff\uf900-\ufaff\u{20000}-\u{3134f}]/u.test(ch)) return 'kanji';
+  if (/[\p{Co}\p{Cs}\u{e0000}-\u{e007f}]/u.test(ch)) return 'gaiji';
+  return 'symbols';
+};
+J.fontForChar = (key, ch) => {
+  const composite = J.FONTS[key]?.composite;
+  if (!composite) return key;
+  const selected = composite.parts[J.compositeCategory(ch)];
+  return selected && J.FONTS[selected] && !J.FONTS[selected].composite ? selected : composite.base;
+};
+J.setCompositeFonts = definitions => {
+  for (const [key, face] of Object.entries(J.FONTS)) if (face.composite) delete J.FONTS[key];
+  for (const def of definitions || []) {
+    if (!def || !/^composite_[\w-]+$/.test(def.key) || !J.FONTS[def.base] || J.FONTS[def.base].composite) continue;
+    const base = J.FONTS[def.base];
+    J.FONTS[def.key] = { ...base, label: def.name, user: true, composite: { base: def.base, parts: def.parts || {} } };
+  }
+  J.glyphs.clear(); J.metrics.clear();
+};
+const fontDatabase = () => new Promise((resolve, reject) => {
+  if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+  const request = indexedDB.open('jizura-fonts-v1', 1);
+  request.onupgradeneeded = () => request.result.createObjectStore('files');
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error);
+});
+J.saveFontFile = async (key, file) => {
+  const db = await fontDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').put(file, key);
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    });
+  } finally { db.close(); }
+};
+J.restoreFontFiles = async userFonts => {
+  const files = (userFonts || []).filter(font => font.file);
+  if (!files.length) return;
+  const db = await fontDatabase();
+  try {
+    for (const font of files) {
+      const blob = await new Promise((resolve, reject) => {
+        const tx = db.transaction('files'); const request = tx.objectStore('files').get(font.key);
+        request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+      });
+      if (!blob) continue;
+      const face = new FontFace(font.family, await blob.arrayBuffer());
+      await face.load(); document.fonts.add(face);
+    }
+    J.glyphs.clear(); J.metrics.clear();
+  } finally { db.close(); }
 };
 J.loadFontFile = async (file) => {
   const buf = await file.arrayBuffer();
@@ -1066,10 +1148,13 @@ J.loadFontFile = async (file) => {
   await ff.load(); document.fonts.add(ff);
   const key = 'user_' + fam;
   J.addUserFont(key, file.name.replace(/\.[^.]+$/, ''), fam, 400, 'custom');
+  await J.saveFontFile(key, file).catch(() => {});
   return key;
 };
 
-J.fontCSS = (key, px) => {
+J.fontCSS = (key, px, ch) => {
+  if (ch != null) key = J.fontForChar(key, ch);
+  else if (J.FONTS[key]?.composite) key = J.FONTS[key].composite.base;
   const f = J.faceOf ? J.faceOf(key) : (J.FONTS[key] || J.FONTS.gothic_bold);   // per-language face (02b_lang.js)
   return `${f.weight} ${px.toFixed(2)}px ${f.family},${f.fb}`;
 };
@@ -1098,7 +1183,11 @@ J.fontsOfPlan = (plan) => {
     if (typeof v === 'string' && J.FONTS[v]) set.add(v);
     else if (Array.isArray(v)) v.forEach(x => { if (typeof x === 'string' && J.FONTS[x]) set.add(x); });
   }
-  return [...set].filter(k => J.FONTS[k]);
+  for (const key of [...set]) {
+    const composite = J.FONTS[key]?.composite;
+    if (composite) { set.add(composite.base); Object.values(composite.parts).forEach(part => set.add(part)); }
+  }
+  return [...set].filter(k => J.FONTS[k] && !J.FONTS[k].composite);
 };
 /* make sure the glyphs we need are loaded (Google Fonts are unicode-range split). keys = null → every catalogue face */
 J.ensureFonts = async (text, keys) => {
@@ -1130,7 +1219,7 @@ J.metrics = {
     const k = fontKey + '\u0000' + ch;
     let v = this.m.get(k);
     if (v === undefined) {
-      _mc.font = J.fontCSS(fontKey, 100);
+      _mc.font = J.fontCSS(fontKey, 100, ch);
       v = _mc.measureText(ch).width / 100;
       if (!(v > 0)) v = ch === ' ' ? 0.3 : 1;
       this.m.set(k, v);
@@ -1149,6 +1238,7 @@ class GlyphCache {
   clear() { this.map.clear(); this.tint.clear(); }
   bucket(px) { let r = 64; while (r < px && r < this.maxRes) r *= 2; return r; }
   get(fontKey, ch, px) {
+    fontKey = J.fontForChar(fontKey, ch);
     const res = this.bucket(px);
     const key = fontKey + '|' + ch + '|' + res;
     let g = this.map.get(key);
@@ -1583,6 +1673,7 @@ J.drawItem = (env, it) => {
     const a = baseAlpha * (c && c.a != null ? c.a : 1);
     if (a <= 0.002) continue;
     const ch = (c && c.ch) || g.ch;
+    if (J.FONTS[it.font]?.composite) ctx.font = J.fontCSS(it.font, size, ch);
     const cs = c && c.s != null ? c.s : 1;
     const gx = g.x * sx + g.vx * sx + (c ? c.dx || 0 : 0);
     const gy = g.y * sy + g.vy * sy + (c ? c.dy || 0 : 0);
@@ -3551,7 +3642,7 @@ J.plan = (project, audio) => {
     tm.duration = Math.max(0.1, fixedDuration, latestLine + 0.04, latestBlank + 0.04);
     tm.ends = tm.ends.map((end, i) => Math.max(tm.starts[i] + 0.04, Math.min(end, tm.duration)));
   }
-  const [W, H] = J.designSize(project.aspect);
+  const [W, H] = J.designSize(project);
   // enabled map: anything not explicitly switched off is on (new pack entries appear enabled in old projects);
   // then the 追加分 / 和風 switches decide what random picks may use (a per-line override still works)
   const en = {};
@@ -3888,7 +3979,13 @@ function pickFx(rng, st, en, fx, emph, fxHist, kind) {
   return cands.length ? rng.wpick(cands) : null;
 }
 
-J.designSize = (aspect) => {
+J.designSize = (input) => {
+  const project = typeof input === 'object' && input ? input : null;
+  if (project && project.videoSize && Number.isFinite(+project.videoSize.w) && Number.isFinite(+project.videoSize.h) && +project.videoSize.w >= 16 && +project.videoSize.h >= 16) {
+    const w = +project.videoSize.w, h = +project.videoSize.h;
+    return [1920 * w / Math.max(w, h), 1920 * h / Math.max(w, h)];
+  }
+  const aspect = project ? project.aspect : input;
   if (aspect === '9:16') return [1080, 1920];
   if (aspect === '1:1') return [1440, 1440];
   if (aspect === '4:5') return [1440, 1800];
@@ -3898,6 +3995,7 @@ J.designSize = (aspect) => {
   return [1920, 1080];
 };
 J.outputSize = (project) => {
+  if (project.videoSize && Number.isFinite(+project.videoSize.w) && Number.isFinite(+project.videoSize.h) && +project.videoSize.w >= 16 && +project.videoSize.h >= 16) return [J.clamp(Math.round(+project.videoSize.w / 2) * 2, 16, 8192), J.clamp(Math.round(+project.videoSize.h / 2) * 2, 16, 8192)];
   const [W, H] = J.designSize(project.aspect);
   const k = (project.res || 1080) / Math.min(W, H);
   return [Math.round(W * k / 2) * 2, Math.round(H * k / 2) * 2];
@@ -30188,7 +30286,7 @@ const ICON = {
   frontmost: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="5" width="10" height="8" rx="1"/><path d="M5 2h9v8M8 4l2 2 2-2"/></svg>',
 };
 
-const S = { project: null, plan: null, audio: null, renderer: new J.Renderer(), playing: false, t: 0, t0: 0, loop: true, need: true, exporting: null, tap: null, linkDrag: null, slow: false, lineEls: [], blankEls: new Map(), mediaLineEls: [], sourceTab: 'lyrics', curLine: -2 };
+const S = { project: null, plan: null, audio: null, renderer: new J.Renderer(), playing: false, t: 0, t0: 0, loop: true, need: true, exporting: null, tap: null, linkDrag: null, slow: false, lineEls: [], blankEls: new Map(), mediaLineEls: [], sourceTab: 'lyrics', curLine: -2, timelineZoom: 1 };
 
 /* WebAudio player (works inside sandboxed pages where blob media may be blocked) */
 const AP = {
@@ -30234,6 +30332,7 @@ function removeAudio() {
 function mergeProject(p) {
   const d = J.defaultProject();
   const o = Object.assign(d, p || {});
+  if (o.videoSize) { const [w, h] = J.outputSize(o); o.videoSize = { w, h }; }
   o.fx = Object.assign(J.defaultProject().fx, (p && p.fx) || {});
   o.timing = Object.assign(J.defaultProject().timing, (p && p.timing) || {});
   o.timing.cutTimes = o.timing.cutTimes || {};
@@ -30250,6 +30349,8 @@ function mergeProject(p) {
   o.fonts = (p && p.fonts) || {};
   o.userFonts = (p && p.userFonts) || [];
   for (const uf of o.userFonts) if (!J.FONTS[uf.key]) J.addUserFont(uf.key, uf.label, uf.family, uf.weight || 400);
+  o.compositeFonts = Array.isArray(p && p.compositeFonts) ? p.compositeFonts : [];
+  J.setCompositeFonts(o.compositeFonts);
   return o;
 }
 function setBadges(d) {
@@ -30553,7 +30654,25 @@ function seek(t) {
 
 /* ---------------- timeline ---------------- */
 const layoutHue = k => (J.LAYOUT_ORDER.indexOf(k) * 37 + 30) % 360;
+function sizeTimelineStack() {
+  const scroll = $('timelineScroll'), stack = $('timelineStack');
+  const width = Math.max(10, Math.round(scroll.clientWidth * S.timelineZoom));
+  if (stack.style.width !== `${width}px`) stack.style.width = `${width}px`;
+}
+function setTimelineZoom(zoom) {
+  const scroll = $('timelineScroll'), stack = $('timelineStack');
+  const center = scroll.scrollLeft + scroll.clientWidth / 2;
+  const fraction = center / Math.max(1, stack.clientWidth);
+  S.timelineZoom = J.clamp(zoom, 1, 8);
+  sizeTimelineStack();
+  scroll.scrollLeft = Math.max(0, fraction * stack.clientWidth - scroll.clientWidth / 2);
+  $('timelineZoomValue').textContent = `${Math.round(S.timelineZoom * 100)}%`;
+  $('timelineZoomOut').disabled = S.timelineZoom <= 1;
+  $('timelineZoomIn').disabled = S.timelineZoom >= 8;
+  drawTimeline(); drawTimelineLinks();
+}
 function drawTimeline() {
+  sizeTimelineStack();
   const c = $('timeline'), dpr = Math.min(2, window.devicePixelRatio || 1);
   const w = Math.max(10, Math.round(c.clientWidth * dpr)), h = Math.max(10, Math.round(c.clientHeight * dpr));
   if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
@@ -31238,7 +31357,7 @@ function renderMediaList() {
   });
   $('mediaRandom').checked = !!m.randomOrder;
   $('mediaLoop').checked = !!m.loop;
-  $('mediaCutCount').min = '1';
+  $('mediaCutCount').min = '0';
   $('mediaCutCount').value = String(m.manualCuts ? m.cutCount : m.cutCount || m.items.length * 2 || 1);
   $('mediaBlend').value = m.blend;
   $('mediaOpacity').value = m.opacity;
@@ -31285,6 +31404,35 @@ function insertMediaCut(index, layer = activeMediaLayer() || 'media') {
   }
   replan(); seek(start);
 }
+function removeMediaCut(index, layer = activeMediaLayer() || 'media') {
+  const m = S.project[layer], cuts = S.plan[layer].cuts;
+  if (!Number.isInteger(index) || index < 0 || index >= cuts.length) return;
+  cancelAreaEditor();
+  if (S.tap) stopTap();
+  const overrides = {}, times = {};
+  cuts.forEach((cut, oldIndex) => {
+    if (oldIndex === index) return;
+    const newIndex = oldIndex > index ? oldIndex - 1 : oldIndex;
+    overrides[newIndex] = Object.assign({}, m.cutOverrides[oldIndex] || {}, { itemId: cut.itemId });
+    times[newIndex] = +cut.start.toFixed(3);
+  });
+  m.manualCuts = true;
+  m.cutCount = cuts.length - 1;
+  m.cutOverrides = overrides;
+  m.timing.lineTimes = times;
+  const prefix = layer === 'foreground' ? 'f:' : 'm:';
+  const remapRef = ref => {
+    if (typeof ref !== 'string' || !ref.startsWith(prefix)) return ref;
+    const oldIndex = +ref.slice(prefix.length);
+    if (!Number.isInteger(oldIndex)) return ref;
+    return oldIndex === index ? null : prefix + (oldIndex > index ? oldIndex - 1 : oldIndex);
+  };
+  S.project.timelineLinks = S.project.timelineLinks.flatMap(link => {
+    const a = remapRef(link.a), b = remapRef(link.b);
+    return a && b ? [{ a, b }] : [];
+  });
+  replan();
+}
 async function addMediaFiles(files, layer) {
   const m = S.project[layer];
   for (const file of files) {
@@ -31317,17 +31465,17 @@ function renderMediaLines() {
     const item = m.items.find(x => x.id === cut.itemId), ov = Object.assign({}, m.overrides[cut.itemId] || {}, m.cutOverrides[i] || {});
     const fileSelect = `<select class="media-cut-file" aria-label="File for cut ${i + 1}"><option value="">No image</option>${m.items.map(asset => `<option value="${escapeHtml(asset.id)}" ${cut.itemId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}</select>`;
     if (ov.layout === 'stretch') ov.layout = 'cover';
-    for (const key of ['layout', 'enter', 'hold', 'exit', 'treat']) if (!ov[key]) ov[key] = cut[key];
+    for (const key of ['layout', 'enter', 'hold', 'exit', 'treat']) if (ov[key] === undefined) ov[key] = cut[key];
     const asset = J.mediaAssets.get(cut.itemId), source = asset && asset.element;
     const sw = source && (source.videoWidth || source.naturalWidth), sh = source && (source.videoHeight || source.naturalHeight);
     const placement = J.mediaPlacementRect(cut.placement, sw, sh, S.plan.W, S.plan.H);
     const placementControl = `<span class="foreground-placement-controls"><button class="foreground-placement-open ghost" type="button" ${placement ? '' : 'disabled'} aria-label="${i + 1} cut position and size"><span class="foreground-placement-thumb"><i style="left:${(placement ? placement.x : 0) * 100}%;top:${(placement ? placement.y : 0) * 100}%;width:${(placement ? placement.w : 1) * 100}%;height:${(placement ? placement.h : 1) * 100}%;transform:rotate(${cut.placement ? cut.placement.angle || 0 : 0}deg)"></i></span>Edit position and size</button>${cut.placement ? '<button class="foreground-placement-reset ghost" type="button">Reset automatic placement</button>' : ''}</span>`;
     const li = document.createElement('li'); li.className = 'ln media-ln';
-    li.innerHTML = `<span class="no">${String(i + 1).padStart(2, '0')}</span><input class="time mono" type="number" step="0.01" min="0" value="${cut.start.toFixed(2)}" aria-label="${i + 1} cut start time (s)">${fileSelect}${mediaThumb(item, 'media-ln-thumb')}<div class="meta"><span class="cuts"><span>${J.MEDIA_LAYOUT[cut.layout]}</span><span>${J.MEDIA_ENTER[cut.enter]} → ${J.MEDIA_EXIT[cut.exit]}</span>${cut.trans ? `<span>${J.mediaTransOptions()[cut.trans]}</span>` : ''}</span><span class="tools">${select('Display mode', J.MEDIA_LAYOUT, ov.layout)}${select('Entrance', J.MEDIA_ENTER, ov.enter)}${select('Hold', J.MEDIA_HOLD, ov.hold)}${select('Exit', J.MEDIA_EXIT, ov.exit)}${select('Treatment', J.MEDIA_TREAT, ov.treat)}${select('Transition', J.mediaTransOptions(), ov.trans)}<button class="icon ghost dice" title="Reroll this cut">${ICON.dice}</button><button class="icon ghost lock" title="Lock this cut" aria-pressed="${ov.lock ? 'true' : 'false'}">${ICON.lock}</button></span>${placementControl}${cut.type === 'video' ? `<label class="media-video-loop"><input type="checkbox" ${cut.videoLoop ? 'checked' : ''}>Loop video</label><label class="media-video-duration">Video duration (s)<input type="number" min="0.04" max="3600" step="0.01" placeholder="Auto" value="${ov.videoDuration ?? ''}" aria-label="${i + 1} cut video duration (s)"></label>` : ''}</div>`;
+    li.innerHTML = `<span class="no">${String(i + 1).padStart(2, '0')}</span><input class="time mono" type="number" step="0.01" min="0" value="${cut.start.toFixed(2)}" aria-label="${i + 1} cut start time (s)">${fileSelect}${mediaThumb(item, 'media-ln-thumb')}<div class="meta"><span class="cuts"><span>${J.MEDIA_LAYOUT[cut.layout]}</span><span>${J.MEDIA_ENTER[cut.enter]} → ${J.MEDIA_EXIT[cut.exit]}</span>${cut.trans ? `<span>${J.mediaTransOptions()[cut.trans]}</span>` : ''}</span><span class="tools">${select('Display mode', J.MEDIA_LAYOUT, ov.layout)}${select('Entrance', J.MEDIA_ENTER, ov.enter)}${select('Hold', J.MEDIA_HOLD, ov.hold)}${select('Exit', J.MEDIA_EXIT, ov.exit)}${select('Treatment', J.MEDIA_TREAT, ov.treat)}${select('Transition', J.mediaTransOptions(), ov.trans)}<button class="icon ghost dice" title="Reroll this cut">${ICON.dice}</button><button class="icon ghost lock" title="Lock this cut" aria-pressed="${ov.lock ? 'true' : 'false'}">${ICON.lock}</button><button class="ghost small remove-media-cut" type="button" aria-label="Remove cut ${i + 1}">Remove</button></span>${placementControl}${cut.type === 'video' ? `<label class="media-video-loop"><input type="checkbox" ${cut.videoLoop ? 'checked' : ''}>Loop video</label><label class="media-video-duration">Video duration (s)<input type="number" min="0.04" max="3600" step="0.01" placeholder="Auto" value="${ov.videoDuration ?? ''}" aria-label="${i + 1} cut video duration (s)"></label>` : ''}</div>`;
     if (cut.type === 'video') li.querySelector('.meta').insertAdjacentHTML('beforeend', `<span class="media-chroma"><label><input class="media-chroma-toggle" type="checkbox" ${cut.chromaKey ? 'checked' : ''}>Chroma key</label><label>Color<input class="media-chroma-color" type="color" value="${cut.chromaColor}" aria-label="${i + 1} cut chroma key color" ${cut.chromaKey ? '' : 'disabled'}></label></span>`);
     li.querySelector('.time').addEventListener('change', e => { m.timing.lineTimes[i] = Math.max(0, parseFloat(e.target.value) || 0); replan(); });
     li.querySelector('.media-cut-file').addEventListener('change', e => { mediaOv(i, { itemId: e.target.value || null }, layer); replan(); });
-    ['layout', 'enter', 'hold', 'exit', 'treat', 'trans'].forEach((key, n) => li.querySelectorAll('.tools select')[n].addEventListener('change', e => { mediaOv(i, { [key]: e.target.value || undefined }); replan(); }));
+    ['layout', 'enter', 'hold', 'exit', 'treat', 'trans'].forEach((key, n) => li.querySelectorAll('.tools select')[n].addEventListener('change', e => { mediaOv(i, { [key]: e.target.value || null }, layer); replan(); }));
     if (i === 0) li.querySelector('select[aria-label="Transition"]').disabled = true;
     const videoLoop = li.querySelector('.media-video-loop input');
     if (videoLoop) videoLoop.addEventListener('change', e => { mediaOv(i, { videoLoop: e.target.checked }); replan(); });
@@ -31344,6 +31492,7 @@ function renderMediaLines() {
     }
     li.querySelector('.dice').addEventListener('click', () => rerollMediaCut(layer, i));
     li.querySelector('.lock').addEventListener('click', () => toggleMediaCutLock(layer, i));
+    li.querySelector('.remove-media-cut').addEventListener('click', () => removeMediaCut(i, layer));
     ol.appendChild(li); S.mediaLineEls.push(li);
   });
   addButton(S.plan[layer].cuts.length);
@@ -31395,7 +31544,7 @@ function drawStyleGrid() {
 function fontSelectOptions(sel) {
   return '<option value="">Style default</option>' + Object.entries(J.FONTS).map(([k, f]) => {
     const g = J.faceOf ? J.faceOf(k) : f, alt = g.label && g.label !== f.label ? ' → ' + g.label : '';   // the face actually used for the lyric language
-    return `<option value="${k}" ${sel === k ? 'selected' : ''}>${escapeHtml(f.label + alt)}</option>`;
+    return `<option value="${escapeHtml(k)}" style="font-family:${escapeHtml(g.family)},sans-serif;font-weight:${g.weight}" ${sel === k ? 'selected' : ''}>${escapeHtml(f.label + alt)}</option>`;
   }).join('');
 }
 function renderFontRoles() {
@@ -31406,6 +31555,18 @@ function renderFontRoles() {
     row.querySelector('select').addEventListener('change', e => { if (e.target.value) S.project.fonts[role] = e.target.value; else delete S.project.fonts[role]; fontKey = ''; replan(); });
     box.appendChild(row);
   });
+  renderCompositeFonts();
+}
+function renderCompositeFonts() {
+  const choices = Object.entries(J.FONTS).filter(([, f]) => !f.composite).map(([key, f]) => `<option value="${escapeHtml(key)}" style="font-family:${escapeHtml((J.faceOf ? J.faceOf(key) : f).family)},sans-serif">${escapeHtml(f.label)}</option>`).join('');
+  const base = $('compositeBase');
+  if (!base) return;
+  const selected = base.value; base.innerHTML = choices;
+  if (selected && J.FONTS[selected]) base.value = selected;
+  const parts = $('compositeParts'), existing = Object.fromEntries([...parts.querySelectorAll('select')].map(el => [el.dataset.part, el.value]));
+  parts.innerHTML = Object.entries(J.COMPOSITE_PARTS).map(([key, label]) => `<label>${label}<select data-part="${key}"><option value="">Use base font</option>${choices}</select></label>`).join('');
+  for (const select of parts.querySelectorAll('select')) if (existing[select.dataset.part]) select.value = existing[select.dataset.part];
+  $('compositeList').innerHTML = (S.project.compositeFonts || []).map(def => `<div class="composite-saved"><span>${escapeHtml(def.name)}</span><button type="button" data-key="${escapeHtml(def.key)}" aria-label="${escapeHtml(def.name)} remove">×</button></div>`).join('');
 }
 const BASE_KEYS = [['bg', 'Background'], ['fg', 'Text'], ['sub', 'Secondary']];
 const ACCENT_KEYS = [['accent', 'Accent'], ['ghostA', 'Offset A'], ['ghostB', 'Offset B']];
@@ -31978,6 +32139,18 @@ function renderTech() {
 function syncOut() {
   $('outAspect').value = S.project.aspect; $('outRes').value = String(S.project.res); $('outFps').value = String(S.project.fps);
   $('eAspect').value = S.project.aspect; $('eRes').value = String(S.project.res); $('eFps').value = String(S.project.fps);
+  const size = S.project.videoSize;
+  const preset = size ? `${size.w}x${size.h}` : 'legacy';
+  for (const id of ['out', 'e']) {
+    const selector = $(`${id}VideoSize`);
+    selector.value = S.project.videoSizeMode === 'custom' ? 'custom' : [...selector.options].some(option => option.value === preset) ? preset : 'custom';
+    if (!size) selector.value = 'legacy';
+    $(`${id}VideoWidth`).value = size ? size.w : J.outputSize(S.project)[0];
+    $(`${id}VideoHeight`).value = size ? size.h : J.outputSize(S.project)[1];
+    $(`${id}VideoWidth`).closest('label').hidden = selector.value !== 'custom';
+    $(`${id}VideoHeight`).closest('label').hidden = selector.value !== 'custom';
+  }
+  for (const id of ['outAspect', 'outRes', 'eAspect', 'eRes']) $(id).disabled = !!size;
   $('outQuality').value = S.project.quality || 'high'; $('outAudio').checked = S.project.includeAudio !== false;
   const k = J.keyMode(S.project) || 'off';
   $('outKey').value = k; $('eKey').value = k;
@@ -32105,10 +32278,10 @@ async function runExport(kind) {
 /* ---------------- tap sync ---------------- */
 function startTap() {
   const layer = activeMediaLayer();
-  if (!(layer ? S.plan[layer].cuts.length : S.plan.lines.length)) return;
+  if (!(layer ? S.plan[layer].cuts.length || S.project[layer].loop : S.plan.lines.length)) return;
   S.tap = { i: 0, layer, append: !!layer && S.project[layer].loop };
   if (!S.project.timing.lineTimes) S.project.timing.lineTimes = {};
-  $('tapHint').textContent = S.tap.append ? 'Each tap adds a cut with no image. Continue until you stop.' : 'Press Space or the button when each lyric line or media cut starts.';
+  $('tapHint').textContent = S.tap.append ? 'Each tap adds a cut, cycling through the files. Continue until you stop.' : 'Press Space or the button when each lyric line or media cut starts.';
   $('tapPanel').hidden = false; $('btnTap').setAttribute('aria-pressed', 'true');
   if (S.tap.append && !S.audio) extendTapPreview(0);
   seek(0); play(); updateTap();
@@ -32121,7 +32294,8 @@ function tapNow() {
     const m = S.project[S.tap.layer];
     if (i === 0) { m.timing.lineTimes = {}; m.cutOverrides = {}; m.manualCuts = true; }
     m.cutCount = i + 1;
-    m.cutOverrides[i] = { itemId: null };
+    const order = J.mediaOrder(S.project, S.tap.layer);
+    m.cutOverrides[i] = { itemId: order.length ? order[i % order.length].id : null };
     m.timing.lineTimes[i] = +S.t.toFixed(3);
     S.tap.i++;
     replan();
@@ -32138,7 +32312,8 @@ function tapNow() {
 function stopTap() { S.tap = null; $('tapPanel').hidden = true; $('btnTap').setAttribute('aria-pressed', 'false'); replan(); }
 function updateTap() {
   if (S.tap.append) {
-    $('tapLine').textContent = `${S.tap.i + 1}. No image`; return;
+    const order = J.mediaOrder(S.project, S.tap.layer);
+    $('tapLine').textContent = `${S.tap.i + 1}. ${order.length ? order[S.tap.i % order.length].name : 'No image'}`; return;
   }
   const ln = S.tap.layer ? S.plan[S.tap.layer].cuts[S.tap.i] : S.plan.lines[S.tap.i];
   $('tapLine').textContent = ln ? `${S.tap.i + 1}. ${S.tap.layer ? ln.name : ln.text}` : '—';
@@ -32164,6 +32339,9 @@ function syncUI() {
 
 /* ---------------- wiring ---------------- */
 function bind() {
+  $('timelineZoomOut').addEventListener('click', () => setTimelineZoom(S.timelineZoom / 1.5));
+  $('timelineZoomIn').addEventListener('click', () => setTimelineZoom(S.timelineZoom * 1.5));
+  $('timelineZoomOut').disabled = true;
   $('sourceLyrics').addEventListener('click', () => { cancelAreaEditor(); S.sourceTab = 'lyrics'; syncSourceTab(); });
   $('sourceMedia').addEventListener('click', () => { cancelAreaEditor(); S.sourceTab = 'media'; renderMediaList(); renderMediaLines(); });
   $('sourceForeground').addEventListener('click', () => { cancelAreaEditor(); S.sourceTab = 'foreground'; renderMediaList(); renderMediaLines(); });
@@ -32174,14 +32352,14 @@ function bind() {
     if (!mode) return;
     e.preventDefault(); areaOverlay.setPointerCapture(e.pointerId);
     S.areaEdit.drag = { start: mediaPointer(e), previous: { ...S.areaEdit.draft }, previousAngle: S.areaEdit.angle, pointerAngle: mediaPointerAngle(e, S.areaEdit.draft), handle: mode };
-    areaOverlay.style.cursor = mode === 'rotate' ? 'grabbing' : '';
-    $('areaEditRect').style.cursor = mode === 'rotate' ? 'grabbing' : '';
+    areaOverlay.style.cursor = mode === 'rotate' ? 'var(--rotate-cursor)' : '';
+    $('areaEditRect').style.cursor = mode === 'rotate' ? 'var(--rotate-cursor)' : '';
   });
   areaOverlay.addEventListener('pointermove', e => {
     if (!S.areaEdit) return;
     if (S.areaEdit.drag) moveMediaDraft(e);
     else {
-      const mode = mediaHit(e), cursor = mode === 'rotate' ? 'grab' : mode === 'move' ? 'move' : 'default';
+      const mode = mediaHit(e), cursor = mode === 'rotate' ? 'var(--rotate-cursor)' : mode === 'move' ? 'move' : 'default';
       areaOverlay.style.cursor = cursor; $('areaEditRect').style.cursor = cursor;
     }
   });
@@ -32216,7 +32394,7 @@ function bind() {
     replan();
   });
   $('mediaCutCount').addEventListener('change', e => {
-    const layer = activeMediaLayer(), m = S.project[layer], count = J.clamp(Math.floor(+e.target.value || 0), 1, 1000);
+    const layer = activeMediaLayer(), m = S.project[layer], count = J.clamp(Math.floor(+e.target.value || 0), 0, 1000);
     if (count !== S.plan[layer].cuts.length) {
       freezeMediaCuts(layer);
       for (let i = m.cutCount; i < count; i++) m.cutOverrides[i] = { itemId: null };
@@ -32434,13 +32612,74 @@ function bind() {
     S.project.fonts.display = key; $('localFont').value = '';
     fontKey = ''; renderFontRoles(); replan();
   });
+  $('btnListFonts').addEventListener('click', async () => {
+    if (typeof window.queryLocalFonts !== 'function') { toast('This browser cannot list installed fonts'); return; }
+    try {
+      const fonts = await window.queryLocalFonts();
+      const unique = new Map();
+      for (const font of fonts) if (font.family) unique.set(`${font.family}\u0000${font.style}`, font);
+      const selector = $('installedFonts'); selector.innerHTML = '';
+      for (const font of [...unique.values()].sort((a, b) => (a.family + a.style).localeCompare(b.family + b.style))) {
+        const option = document.createElement('option'); option.value = font.postscriptName || font.fullName; option.textContent = font.fullName || `${font.family} ${font.style}`;
+        option.style.fontFamily = `"${font.family.replace(/"/g, '')}"`; option._font = font; selector.appendChild(option);
+      }
+      selector.hidden = !$('installedFonts').options.length; $('btnImportFont').hidden = selector.hidden;
+      if (selector.hidden) toast('No fonts were found');
+    } catch (error) { toast('Access to installed fonts was denied'); }
+  });
+  $('btnImportFont').addEventListener('click', () => {
+    const selector = $('installedFonts'), font = selector.selectedOptions[0]?._font;
+    if (!font) return;
+    const family = font.family, weight = /bold|black|heavy|太|[6-9]00/i.test(font.style || '') ? 700 : 400;
+    const key = 'local_' + Array.from(family + '_' + (font.style || '')).map(ch => ch.codePointAt(0).toString(16)).join('_');
+    const label = font.fullName || `${family} ${font.style || ''}`;
+    J.addUserFont(key, label, family, weight);
+    S.project.userFonts = (S.project.userFonts || []).filter(item => item.key !== key).concat([{ key, label, family, weight }]);
+    S.project.fonts.display = key; fontKey = ''; renderFontRoles(); replan();
+  });
+  $('btnSaveComposite').addEventListener('click', () => {
+    const name = $('compositeName').value.trim(), base = $('compositeBase').value;
+    if (!name || !J.FONTS[base] || J.FONTS[base].composite) { toast('Enter a name and choose a base font'); return; }
+    const parts = Object.fromEntries([...$('compositeParts').querySelectorAll('select')].filter(el => el.value && J.FONTS[el.value] && !J.FONTS[el.value].composite).map(el => [el.dataset.part, el.value]));
+    const key = 'composite_' + Math.random().toString(36).slice(2, 11);
+    S.project.compositeFonts.push({ key, name, base, parts }); J.setCompositeFonts(S.project.compositeFonts);
+    S.project.fonts.display = key; $('compositeName').value = ''; fontKey = ''; renderFontRoles(); replan();
+  });
+  $('compositeList').addEventListener('click', e => {
+    const button = e.target.closest('[data-key]'); if (!button) return;
+    S.project.compositeFonts = S.project.compositeFonts.filter(def => def.key !== button.dataset.key);
+    for (const role of Object.keys(S.project.fonts)) if (S.project.fonts[role] === button.dataset.key) delete S.project.fonts[role];
+    J.setCompositeFonts(S.project.compositeFonts); fontKey = ''; renderFontRoles(); replan();
+  });
   $('fontFile').addEventListener('change', async e => {
     const f = e.target.files && e.target.files[0]; if (!f) return;
-    try { const key = await J.loadFontFile(f); S.project.fonts.display = key; fontKey = ''; renderFontRoles(); replan(); }
+    try {
+      const key = await J.loadFontFile(f), face = J.FONTS[key];
+      S.project.userFonts = (S.project.userFonts || []).filter(item => item.key !== key).concat([{ key, label: face.label, family: face.family.replace(/"/g, ''), weight: face.weight, file: true }]);
+      S.project.fonts.display = key; fontKey = ''; renderFontRoles(); replan();
+    }
     catch (err) { showMsg('Could not load fonts'); setTimeout(() => showMsg(null), 2500); }
   });
   ['outAspect', 'eAspect'].forEach(id => $(id).addEventListener('change', e => { S.project.aspect = e.target.value; syncOut(); replan(); codecNote(); }));
   ['outRes', 'eRes'].forEach(id => $(id).addEventListener('change', e => { S.project.res = +e.target.value; syncOut(); autosave(); codecNote(); }));
+  for (const id of ['out', 'e']) {
+    $(`${id}VideoSize`).addEventListener('change', e => {
+      const choice = e.target.value;
+      S.project.videoSizeMode = choice === 'custom' ? 'custom' : 'preset';
+      if (choice === 'legacy') S.project.videoSize = null;
+      else if (choice === 'custom') {
+        const [w, h] = J.outputSize(S.project); S.project.videoSize = { w, h };
+      } else { const [w, h] = choice.split('x').map(Number); S.project.videoSize = { w, h }; }
+      syncOut(); replan(); codecNote();
+    });
+    for (const dimension of ['Width', 'Height']) $(`${id}Video${dimension}`).addEventListener('change', e => {
+      const n = Math.round(+e.target.value / 2) * 2;
+      if (!Number.isFinite(n) || n < 16 || n > 8192) { syncOut(); return; }
+      const [w, h] = J.outputSize(S.project);
+      S.project.videoSize = { w: dimension === 'Width' ? n : w, h: dimension === 'Height' ? n : h };
+      syncOut(); replan(); codecNote();
+    });
+  }
   ['outFps', 'eFps'].forEach(id => $(id).addEventListener('change', e => { S.project.fps = +e.target.value; syncOut(); replan(); codecNote(); }));
   $('outQuality').addEventListener('change', e => { S.project.quality = e.target.value; autosave(); });
   ['outKey', 'eKey'].forEach(id => $(id).addEventListener('change', e => {
@@ -32486,7 +32725,7 @@ function bind() {
   $('btnAE').addEventListener('click', () => J.saveFile(baseName() + '_ae.json', JSON.stringify(J.planForAE(S.plan, S.project), null, 1)));
   $('fileProject').addEventListener('change', async e => {
     const f = e.target.files && e.target.files[0]; if (!f) return;
-    try { S.project = mergeProject(JSON.parse(await f.text())); loadBrands(); syncUI(); replan(); await restoreMediaAssets(); }
+    try { S.project = mergeProject(JSON.parse(await f.text())); loadBrands(); syncUI(); replan(); await Promise.all([restoreMediaAssets(), J.restoreFontFiles(S.project.userFonts)]); fontKey = ''; ensureFonts(); }
     catch (err) { showMsg('Could not load project'); setTimeout(() => showMsg(null), 2500); }
     e.target.value = '';
   });
@@ -32529,6 +32768,7 @@ function boot() {
   initUndo();
   bind(); bindBrands(); initVolume(); loadFavs(); renderFavs(); loadBrands(); syncUI(); replan();
   restoreMediaAssets();
+  J.restoreFontFiles(S.project.userFonts).then(() => { fontKey = ''; ensureFonts(); S.need = true; }).catch(() => {});
   let mode = 'easy'; try { mode = localStorage.getItem('jizura.mode') || 'easy'; } catch (e) {}
   setMode(mode); commit();
   // open on a representative frame (end of the first cut's entrance)
