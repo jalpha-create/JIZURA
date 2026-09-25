@@ -42,6 +42,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .lang-switch a:hover { color: var(--text); background: var(--raised2); }
 .lang-switch [aria-current=page] { color: var(--ink); background: var(--amber); }
 html[lang=en] { --ui: system-ui, -apple-system, "Segoe UI", sans-serif; --brand: Georgia, "Times New Roman", serif; }
+html[lang=zh-Hant] { --ui: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif; }
+html[lang=ko] { --ui: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; --brand: "Noto Serif KR", "AppleMyungjo", "Batang", serif; }
 html[lang=en] .work { grid-template-columns: minmax(315px, 365px) minmax(0, 1fr) minmax(350px, 395px); }
 html[lang=en] .slider { grid-template-columns: 124px minmax(0, 1fr) 36px; }
 html[lang=en] .now-row { grid-template-columns: 105px minmax(0, 1fr); }
@@ -210,6 +212,18 @@ button.remove-media-cut:hover, button.remove-media-cut:focus-visible { color: #f
 .undo-btns { display: inline-flex; gap: 4px; }
 .transport input[type=range] { flex: 1 1 160px; accent-color: var(--amber); }
 button.play { width: 40px; height: 34px; padding: 0; font-size: 14px; }
+/* timeline controls, export range, line tools */
+.tl-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+.tl-hint { font-size: 11px; }
+.tl-btns { display: flex; gap: 4px; margin-left: auto; }
+.rng-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 10px 0 2px; font-size: 12px; }
+.rng-row select { width: auto; max-width: 150px; }
+.rng-lab { color: var(--muted); font-size: 11px; }
+.rngInfo { font-size: 11px; }
+.ln.in-range { border-color: var(--amber); }
+.ln.is-inter .txt { color: var(--muted); font-style: italic; }
+.ln .txt-edit { width: 100%; padding: 3px 6px; font-size: 13px; }
+.ln .tools .icon[aria-pressed=true] { color: var(--amber); }
 #timeline { width: 100%; height: 76px; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; touch-action: none; }
 #mediaTimeline { width: 100%; height: 52px; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; touch-action: none; }
 #foregroundTimeline { width: 100%; height: 52px; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; touch-action: none; }
@@ -353,6 +367,10 @@ button.omakase:disabled { box-shadow: none; }
 button.linkish { background: none; border: 0; padding: 4px 0; color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; }
 button.linkish:hover { color: var(--text); background: none; }
 dialog.terms { width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; padding: 22px 24px 18px; background: var(--panel); color: var(--text); border: 1px solid var(--line2); border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.55); }
+dialog.terms .reset-list { margin: 0 0 12px; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; }
+button.danger { background: #c9433a; border-color: #c9433a; color: #fff; font-weight: 700; }
+button.danger:hover { background: #dd5146; }
+.sec-btns { display: inline-flex; gap: 6px; }
 dialog.terms::backdrop { background: rgba(6,6,8,0.66); }
 dialog.terms h2 { font-size: 15px; letter-spacing: 0.08em; color: var(--text); margin: 0 0 14px; }
 dialog.terms h3 { font-size: 13px; color: var(--text); margin: 0 0 10px; }
@@ -370,6 +388,19 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
 .terms-oss summary { cursor: pointer; }
 .terms-oss p { font-size: 12px !important; margin-top: 6px; }
 .terms-foot { display: flex; justify-content: flex-end; align-items: center; gap: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+
+/* ---------- fixed workspace (wide & tall enough windows) ----------
+   The page no longer scrolls as a whole: the header and the preview + timeline stay put, and the
+   lyrics / line list (left) and settings (right) scroll inside their own columns. */
+@media (min-width: 1181px) and (min-height: 620px) {
+  html.fixed-ok body { overflow: hidden; }
+  html.fixed-ok #app { height: 100vh; height: 100dvh; min-height: 0; }
+  html.fixed-ok .work { overflow: hidden; }
+  html.fixed-ok .col-left, html.fixed-ok .col-right { overscroll-behavior: contain; }
+  html.fixed-ok .col-stage { overflow: hidden auto; }
+  html.fixed-ok .viewport { flex: 1 1 0; min-height: 180px; }
+  html.fixed-ok .viewport canvas { max-height: none; }
+}
 
 /* ---------- responsive ---------- */
 @media (max-width: 1180px) {
@@ -470,3 +501,21 @@ dialog.terms .terms-fork h3 { color: var(--cyan); }
 .brand-logo { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
 .brand-logo img { width: 120px; height: 120px; object-fit: contain; background: repeating-conic-gradient(#2a2a31 0 25%, #1b1b20 0 50%) 0 0 / 16px 16px; border: 1px solid var(--line2); border-radius: 6px; }
 .brand-logo-ctl { display: grid; gap: 8px; flex: 1; min-width: 200px; }
+
+/* ---------- かんたんモードの案内ツアー ---------- */
+.tour { position: fixed; inset: 0; z-index: 200; pointer-events: auto; }
+.tour-spot { position: fixed; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(8, 8, 10, 0.66); outline: 2px solid var(--amber); transition: all 0.22s ease; pointer-events: none; }
+.tour-bub { position: fixed; width: min(340px, calc(100vw - 24px)); background: var(--panel); color: var(--text); border: 1px solid var(--line2); border-radius: 10px; padding: 14px 16px 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); transition: top 0.22s ease, left 0.22s ease; }
+.tour-step { font-size: 11px; }
+.tour-title { margin: 4px 0 6px; font-size: 15px; }
+.tour-text { margin: 0 0 12px; font-size: 13px; line-height: 1.7; color: var(--muted); }
+.tour-nav { display: flex; gap: 6px; align-items: center; }
+.tour-sp { flex: 1; }
+.tour-btn { min-width: 30px; font-weight: 700; }
+button.small.primary { padding: 4px 12px; }
+
+.lang-switch select { font: 500 11px var(--mono); padding: 3px 6px; width: auto; background: transparent; color: var(--muted); border: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.unify-box { margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.center-dir { gap: 6px; margin: -2px 0 8px 26px; font-size: 12px; }
+.center-dir select { width: auto; }

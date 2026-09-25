@@ -136,6 +136,43 @@ function jzPickTreat(rng, st, en, fx, layout, emph, hist) {
     }
     return c.length ? rng.wpick(c) : 'none';
 }
+// side bands (same as the browser's J.sideZones): wide frames left / right, tall frames top / bottom
+function jzSideZones(W, H, dir) {
+    if (H > W * 1.1 && dir === 'lr') { var w0 = Math.round(W * 0.34); return [{ x: 0, y: 0, w: w0, h: H, side: 'left' }, { x: W - w0, y: 0, w: w0, h: H, side: 'right' }]; }
+    if (H > W * 1.1) { var h = Math.round(H * 0.33); return [{ x: 0, y: 0, w: W, h: h, side: 'top' }, { x: 0, y: H - h, w: W, h: h, side: 'bottom' }]; }
+    var w = Math.round(W * (W / H > 2 ? 0.3 : 0.36));
+    return [{ x: 0, y: 0, w: w, h: H, side: 'left' }, { x: W - w, y: 0, w: w, h: H, side: 'right' }];
+}
+function jzZoneOf(zones, li) { var z = zones[Math.max(0, li || 0) % 2]; return { x: z.x, y: z.y, w: z.w, h: z.h, side: z.side }; }
+// 中央を空ける: the lyric split in two (same as the browser's splitCut): first half left / top, second half right / bottom,
+// same layout, motion, decorations and camera
+function jzSplitHalf(t, lang) {
+    t = jzTrim(String(t || ''));
+    var n = jzChars(t.replace(/\s+/g, '')).length, k;
+    var words = lang === 'en' ? jzPhraseChunks(jzChunk(t)) : jzChunk(t);
+    if (words.length >= 2) {
+        var total = 0, acc = 0, best = 1, bd = 1e9, sep = /[A-Za-z]/.test(t) ? ' ' : '';
+        for (k = 0; k < words.length; k++) total += jzChars(String(words[k]).replace(/\s+/g, '')).length;
+        for (k = 1; k < words.length; k++) { acc += jzChars(String(words[k - 1]).replace(/\s+/g, '')).length; var d = Math.abs(acc - total / 2); if (d < bd) { bd = d; best = k; } }
+        return [jzTrim(words.slice(0, best).join(sep)), jzTrim(words.slice(best).join(sep))];
+    }
+    if (n <= 3 || /^[A-Za-z0-9'’-]+$/.test(t)) return [t, t];
+    var all = jzChars(t), cut = Math.ceil(all.length / 2);
+    // a half never starts with a particle, punctuation or a small kana
+    for (var g = 0; g < 3 && cut < all.length - 1 && /[、。，．,.!?！？…・ーっッゃゅょャュョぁぃぅぇぉァィゥェォをがはにでとのへもやよね」』）)]/.test(all[cut]); g++) cut++;
+    return [all.slice(0, cut).join(''), all.slice(cut).join('')];
+}
+function jzSplitCut(cut, zones, st, dur, lang) {
+    var hv = jzSplitHalf(cut.text, lang), seed = jzHash(cut.seed, 23);
+    function planFor(text, z) { return jzPlanOf('layout', cut.layout, new JzRng(seed), st, { text: text, n: jzChars(text.replace(/\s+/g, '')).length, W: z.w, H: z.h, dur: dur }); }
+    cut.text = hv[0]; cut.lineText = hv[0]; cut.words = jzChunk(hv[0]); cut.zone = jzZoneOf(zones, 0); cut.params = planFor(hv[0], zones[0]);
+    var tw = {}, k2;
+    for (k2 in cut) if (cut.hasOwnProperty(k2)) tw[k2] = cut[k2];
+    var delay = Math.min(0.12, dur * 0.08);
+    tw.text = hv[1]; tw.lineText = hv[1]; tw.words = jzChunk(hv[1]); tw.zone = jzZoneOf(zones, 1); tw.params = planFor(hv[1], zones[1]);
+    tw.start = cut.start + delay; tw.dur = cut.end - tw.start; tw.bg = 'none'; tw.bgP = {}; tw.trans = null; tw.transP = {}; tw.transDur = 0; tw.companion = true;
+    cut.companion = tw;
+}
 function jzPickBg(rng, st, en, fx, bgHist) {
     if (!rng.chance(0.2 + 0.35 * fx.decor + 0.2 * fx.bgSwitch)) return 'none';
     var c = [], order = jzOrder('bg'), last = bgHist.slice(Math.max(0, bgHist.length - 3));
@@ -240,20 +277,23 @@ function jzMakePlan(o) {
         else if (allLrc) s = lines[i].lrc;
         else if (i === 0) s = o.offset || 0.4;
         else {
-            var n0 = jzChars(lines[i - 1].text).length, d0 = jzClamp(0.8 + n0 * 0.17, 1.3, 5.2) * (o.lineScale || 1);
-            if (beat) d0 = Math.max(2, Math.round(d0 / beat)) * beat;
+            var pl = lines[i - 1], n0 = jzChars(pl.text).length, d0 = pl.interlude ? (pl.secs > 0 ? pl.secs : 4) : jzClamp(0.8 + n0 * 0.17, 1.3, 5.2) * (o.lineScale || 1);
+            if (beat && !(pl.interlude && pl.secs > 0)) d0 = Math.max(2, Math.round(d0 / beat)) * beat;
             s = starts[i - 1] + d0 + (lines[i].gapBefore ? (beat ? beat * 2 : 0.8) : 0);
         }
         starts.push(s);
     }
     for (i = 0; i < lines.length; i++) {
         if (i < lines.length - 1) ends.push(Math.max(starts[i] + 0.35, starts[i + 1]));
-        else { var nl = jzChars(lines[i].text).length, dl = jzClamp(0.8 + nl * 0.17, 1.5, 5.2) * (o.lineScale || 1); if (beat) dl = Math.max(2, Math.round(dl / beat)) * beat; ends.push(starts[i] + dl); }
+        else { var Li = lines[i], nl = jzChars(Li.text).length, dl = Li.interlude ? (Li.secs > 0 ? Li.secs : 4) : jzClamp(0.8 + nl * 0.17, 1.5, 5.2) * (o.lineScale || 1); if (beat && !(Li.interlude && Li.secs > 0)) dl = Math.max(2, Math.round(dl / beat)) * beat; ends.push(starts[i] + dl); }
     }
     var duration = o.duration || ((ends.length ? ends[ends.length - 1] : 3) + 0.9);
     var W = o.width, H = o.height, portrait = H > W;
+    // 中央を空ける: cuts laid out in side bands (left / right, or top / bottom on tall frames), alternating per line
+    var zones = o.centerFree ? jzSideZones(W, H, o.centerDir) : null;
+    if (zones && en.bg) en.bg.bigChar = false;
     var plan = { version: 2, generator: 'JIZURA-AE', title: title, artist: artist, W: W, H: H, width: W, height: H, fps: o.fps, duration: duration, style: st, styleKey: o.style, fx: fx, lines: [], cuts: [], events: [], hud: fx.hud,
-        lang: (o.lang && o.lang !== 'auto') ? o.lang : jzDetectLangText(o.lyrics + ' ' + title) };
+        lang: (o.lang && o.lang !== 'auto') ? o.lang : jzDetectLangText(o.lyrics + ' ' + title), centerFree: !!zones, zones: zones };
     jzSetLang(plan.lang);
     var hist = [], bgHist = [], fxHist = [], schemeIdx = 0, nS = st.schemes.length;
     function ev(t, type, amp, dur) { plan.events.push({ t: t, type: type, amp: amp, dur: dur }); }
@@ -264,10 +304,21 @@ function jzMakePlan(o) {
     var F = 1 / 24;
     for (var li = 0; li < lines.length; li++) {
         var ln = lines[li], s0 = starts[li], e0 = ends[li], rng = new JzRng(jzHash(o.seed, li + 1));
+        if (ln.interlude) {                                // [間奏]: background, decorations and effects only
+            plan.lines.push({ index: li, text: '', interlude: true, start: s0, end: e0, visEnd: e0, note: null, impact: false });
+            var ibg = jzPickBg(rng, st, en, fx, bgHist); bgHist.push(ibg);
+            var idur = e0 - s0, ishow = idur >= 6 && !!(title || artist);
+            plan.cuts.push({ index: plan.cuts.length, text: '', lineText: '', line: li, start: s0, end: e0, layout: 'interlude', enter: 'blur', exit: 'blur', hold: 'still', inDur: 0.4, outDur: 0.4,
+                params: { variant: 'quiet', showTitle: ishow, titleText: ishow ? (title + (title && artist ? '  /  ' : '') + artist) : '' }, decor: jzPickDecor(rng, st, en, { decor: Math.max(0.6, fx.decor) }, 'interlude', hist), scheme: schemeIdx, seed: jzHash(o.seed, li, 405) % 1000000,
+                treat: 'none', bg: ibg, bgP: ibg !== 'none' ? jzPlanOf('bg', ibg, rng, st) : {}, cam: 'push' });
+            for (var itt = s0 + 1.2; itt < e0 - 0.8; itt += jzClamp(idur / 4, 1.6, 3.2)) { var ipk = jzPickFx(rng, st, en, fx, false, fxHist, 'mid'); if (ipk) { var IM = jzMeta('fx', ipk); ev(itt, ipk, (IM.amp || 1) * 0.6, (IM.dur || 3) * F); fxHist.push(ipk); } }
+            continue;
+        }
         var nch = jzCount(ln.text), visEnd = Math.min(e0, s0 + Math.max(3.6, nch * 0.5 + 1.2)), D = visEnd - s0;
         plan.lines.push({ index: li, text: ln.text, start: s0, end: e0, visEnd: visEnd, note: ln.note, impact: ln.impact });
         var chunks = ln.manual || (plan.lang === 'en' ? jzPhraseChunks(jzChunk(ln.text)) : jzChunk(ln.text)), L = jzLerp(1.3, 0.5, fx.density), nC = Math.round(D / L);
         var maxC = chunks.length + (chunks.length >= 2 && D > 2 ? 1 : 0); nC = jzClamp(nC, 1, Math.max(1, maxC));
+        if (zones) nC = Math.max(1, Math.min(nC, Math.floor(chunks.length / 2)));   // 中央を空ける: ≥ 2 words per cut (each cut is split in two)
         var nG = Math.min(nC, chunks.length), groups = [];
         if (nG <= 1) groups = [ln.text];
         else { var pg = jzPartition(chunks, nG); for (i = 0; i < pg.length; i++) groups.push(pg[i].join(/[A-Za-z]/.test(pg[i].join('')) ? ' ' : '')); }
@@ -283,7 +334,8 @@ function jzMakePlan(o) {
             var u = units[k], cs = bounds[k], ce = bounds[k + 1], dur = ce - cs, nn = jzCount(u.text);
             var emph = (ln.impact && (k === 0 || u.recap));
             for (var q = 0; q < ln.emph.length; q++) if (u.text.indexOf(ln.emph[q]) >= 0) emph = true;
-            var layout = jzPickLayout(rng, st, en, nn, dur, hist, emph, u.recap, portrait);
+            var Z = zones ? jzZoneOf(zones, li) : null, LW = Z ? Z.w : W, LH = Z ? Z.h : H;
+            var layout = jzPickLayout(rng, st, en, nn, dur, hist, emph, u.recap, Z ? LH > LW : portrait);
             var enter = jzPickEnter(rng, st, en, layout, dur, hist, emph, nn);
             var exit = jzPickExit(rng, st, en, layout, dur, k === units.length - 1, hist);
             var hold = jzPickHold(rng, en, fx, hist);
@@ -297,7 +349,7 @@ function jzMakePlan(o) {
             var mOut = jzTab(jzMeta('exit', exit).outDur, dur, nn); if (mOut != null) outDur = mOut;
             if (inDur + outDur > dur * 0.92) { var f = dur * 0.92 / (inDur + outDur); inDur *= f; outDur *= f; }
             var sch = schemeIdx; if (nS > 1 && k > 0 && rng.chance(0.12 * fx.bgSwitch)) sch = (schemeIdx + 1) % nS;
-            var params = jzPlanOf('layout', layout, rng, st, { text: u.text, n: nn, W: W, H: H, dur: dur });
+            var params = jzPlanOf('layout', layout, rng, st, { text: u.text, n: nn, W: LW, H: LH, dur: dur });
             var decor = jzPickDecor(rng, st, en, fx, layout, hist);
             var treat = jzPickTreat(rng, st, en, fx, layout, emph, hist), treatP = treat !== 'none' ? jzPlanOf('treat', treat, rng, st) : {};
             if (k > 0 && rng.chance(0.18 * fx.bgSwitch + 0.04)) { lineBg = jzPickBg(rng, st, en, fx, bgHist); lineBgP = lineBg !== 'none' ? jzPlanOf('bg', lineBg, rng, st) : {}; }
@@ -317,6 +369,7 @@ function jzMakePlan(o) {
                 params: params, decor: decor, scheme: sch, seed: jzHash(o.seed, li, k) % 1000000, emph: emph, recap: !!u.recap, words: jzChunk(u.text), stagger: rng.range(0.025, 0.06),
                 treat: treat, treatP: treatP, bg: bg, bgP: bg === lineBg ? lineBgP : {}, cam: cam, camP: camP, trans: trans, transP: transP, transDur: transDur });
             hist.push({ layout: layout, enter: enter, exit: exit, hold: hold, treat: treat, cam: cam, trans: trans, decor: dids });
+            if (zones) jzSplitCut(plan.cuts[plan.cuts.length - 1], zones, st, dur, plan.lang);
             var g = fx.glitch * (st.glitchBoost || 1);
             if (en.fx.chroma !== false) ev(cs, 'chroma', 1.4 + rng.range(0, 2) * fx.chroma + (emph ? 2.5 : 0), 0.25);
             if (en.fx.slice !== false && rng.chance(g * 0.5 + (emph ? 0.3 : 0))) ev(cs, 'slice', 0.6 + rng.range(0, 0.8) * g + (emph ? 0.5 : 0), rng.pick([2, 3, 4]) * F);
@@ -333,13 +386,18 @@ function jzMakePlan(o) {
             }
             if (dur > 1.1) { var pm = jzPickFx(rng, st, en, fx, emph, fxHist, 'mid'); if (pm) { var M2 = jzMeta('fx', pm); ev(cs + rng.range(0.4, 0.75) * dur, pm, (M2.amp || 1) * (0.5 + 0.4 * g), (M2.dur || 3) * F); } }
         }
-        if (li < lines.length - 1 && starts[li + 1] - visEnd > 1.3) {
+        if (li < lines.length - 1 && starts[li + 1] - visEnd > 1.3 && !lines[li + 1].interlude) {
             var r2 = new JzRng(jzHash(o.seed, li, 404));
             plan.cuts.push({ index: plan.cuts.length, text: title || '', lineText: '', line: li, start: visEnd, end: starts[li + 1], layout: 'interlude', enter: 'blur', exit: 'blur', hold: 'still', inDur: 0.3, outDur: 0.3, params: { variant: r2.pick(['counter', 'rings']) }, decor: jzPickDecor(r2, st, en, { decor: 1 }, 'interlude', []), scheme: schemeIdx, seed: jzHash(o.seed, li, 405) % 1000000, treat: 'none', bg: 'none', cam: 'push' });
         }
     }
     plan.cuts.sort(function (a, b) { return a.start - b.start; });
-    for (i = 0; i < plan.cuts.length; i++) plan.cuts[i].index = i;
+    for (i = 0; i < plan.cuts.length; i++) {
+        var pc0 = plan.cuts[i]; pc0.index = i;
+        if (!zones || pc0.zone) continue;
+        if (pc0.layout === 'interlude') { pc0.params.showTitle = false; continue; }     // no lyric: the whole frame
+        pc0.zone = jzZoneOf(zones, 0);
+    }
     plan.events.sort(function (a, b) { return a.t - b.t; });
     return plan;
 }
