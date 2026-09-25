@@ -458,6 +458,13 @@ FORK_MEDIA = dict(FORK_UI, **{
 
 # jAlpha edition additions. Applied before the fork and original glossaries.
 JALPHA_BODY = {
+    '縦型SNSのアプリ画面で隠れる範囲をプレビューに重ねます（書き出しには入りません）': 'Overlay the parts that short-video apps cover (preview only; never exported)',
+    'セーフエリア表示': 'Safe area guide',
+    'セーフエリア：なし': 'Safe area: off',
+    'SNS 3つを重ねる': 'All three apps',
+    '放送用セーフ（全画面比）': 'Broadcast safe (any ratio)',
+    '>Instagram リール<': '>Instagram Reels<',
+    '>YouTube ショート<': '>YouTube Shorts<',
     'jcreate の配色ライブラリ（P01〜P98）と、書体ライブラリの和文書体も、おまかせと「配色」の振り直しの候補にします': 'Also lets 1-click looks and color re-rolls use the jcreate palette library (P01–P98) and the Japanese faces of the font library',
     'jcreate の配色ライブラリです。選ぶと、スタイルの配色を丸ごとこの色に置き換えます（読みやすい明るさに自動調整）。同じ配色をもう一度押すと、背景になる色が切り替わります。': 'Palettes from the jcreate library. Picking one replaces all of the style’s colors (brightness is adjusted for readability). Click the same palette again to switch which color is the background.',
     '配色・書体ライブラリも使う': 'Use the palette & font libraries',
@@ -478,6 +485,12 @@ JALPHA_BODY = {
 }
 
 JALPHA_UI = {
+    "name: 'Instagram リール'": "name: 'Instagram Reels'",
+    "name: 'YouTube ショート'": "name: 'YouTube Shorts'",
+    "'タイトルセーフ 90%'": "'Title safe 90%'",
+    "'アクションセーフ 93%'": "'Action safe 93%'",
+    "`${safeMode === 'all' ? 'SNS' : SAFE[safeMode].name} の枠は 9:16 用です（いまは ${S.project.aspect}）`": "`${safeMode === 'all' ? 'SNS' : SAFE[safeMode].name} guides are for 9:16 (now ${S.project.aspect})`",
+    "`セーフエリア（${list.map(p => p.name).join('・')}・目安）`": "`Safe area (${list.map(p => p.name).join(' · ')}, approx.)`",
     "'未使用（スタイルの配色）'": "'Not used (style colors)'",
     "c ? libCat(c) : 'すべて'": "c ? libCat(c) : 'All'",
     '`配色ライブラリ：${val.id}`': '`Palette library: ${val.id}`',

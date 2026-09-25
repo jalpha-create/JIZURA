@@ -27,6 +27,8 @@ The **Foreground**, **Lyrics**, and **Background** tabs let you place uploaded i
 
 **Favorites** (jAlpha edition): press ☆ to keep the current look (style, mood, arrangement seed, effects, fonts and colors) with a thumbnail, then click it to bring the look back, even for another song. Per-line settings come back only when the lyrics match. Rename or delete favorites, and save/load them as a file from the top of the Style tab.
 
+**Safe area guide** (jAlpha edition): the Safe area menu next to the play controls overlays what TikTok, Instagram Reels or YouTube Shorts cover on a 9:16 frame (approximate, measured on 1080×1920), or broadcast action/title safe for any ratio. It is preview-only and never exported.
+
 **Batch export** (jAlpha edition) saves one MP4 per selected aspect ratio (16:9, 9:16 and 1:1 by default). Each ratio is re-arranged for its frame from the same seed, and files are named like `title_16x9.mp4`. Chrome asks once to allow multiple downloads.
 
 A volume slider next to the play button sets the preview volume (click **Vol** to mute); exported videos keep the original level. **Transparent PNG layers** exports two transparent PNGs per frame into back/ (background graphic and decorations behind the lyrics) and front/ (lyrics, their decorations, ghosts and HUD); screen effects are applied to both, so front over back matches the normal look. Transparent PNG exports keep the background empty even when full-screen effects (invert, flash, strobe, hue shift, split screen, CRT off, black frames…) are active.

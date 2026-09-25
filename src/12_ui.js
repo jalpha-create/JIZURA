@@ -218,6 +218,62 @@ function loadThumbFonts() {
 function showMsg(m) { const el = $('viewMsg'); if (!m) { el.hidden = true; return; } el.textContent = m; el.hidden = false; }
 
 /* ---------------- viewport & drawing ---------------- */
+/* ---------------- セーフエリア表示 (jAlpha edition) ----------------
+   preview-only guides: what the app UI of each short-video platform covers on a 9:16 frame (rough guides —
+   the apps change their layouts), plus classic broadcast action / title safe for every aspect. Never exported. */
+const SAFE_KEY = 'jizura.safeArea';
+const SAFE = {   // fractions of the frame, measured on 1080×1920: top / right / bottom / left covered by the app UI
+  tiktok: { name: 'TikTok', t: 160 / 1920, r: 150 / 1080, b: 480 / 1920, l: 60 / 1080 },
+  reels: { name: 'Instagram リール', t: 220 / 1920, r: 140 / 1080, b: 420 / 1920, l: 60 / 1080 },
+  shorts: { name: 'YouTube ショート', t: 190 / 1920, r: 190 / 1080, b: 440 / 1920, l: 60 / 1080 },
+};
+let safeMode = 'off';
+try { safeMode = localStorage.getItem(SAFE_KEY) || 'off'; } catch (e) {}
+function drawSafeOverlay() {
+  const box = $('safeOverlay'); if (!box || !S.plan) return;
+  const sel = $('safeMode'); if (sel && sel.value !== safeMode) sel.value = safeMode;
+  box.hidden = safeMode === 'off';
+  if (box.hidden) { box.innerHTML = ''; return; }
+  const W = S.plan.W, H = S.plan.H, tall = Math.abs(W / H - 9 / 16) < 0.01;
+  const u = Math.min(W, H) / 1080;   // stroke / text scale
+  const rect = (x, y, w, h, fill, extra = '') => `<rect x="${x}" y="${y}" width="${Math.max(0, w)}" height="${Math.max(0, h)}" fill="${fill}" ${extra}/>`;
+  const label = (x, y, text, anchor = 'start') => `<text x="${x}" y="${y}" font-size="${26 * u}" text-anchor="${anchor}" fill="#fff" stroke="#000" stroke-width="${5 * u}" paint-order="stroke" font-family="IBM Plex Sans JP, sans-serif" font-weight="600">${escapeHtml(text)}</text>`;
+  let svg = '';
+  if (safeMode === 'broadcast') {
+    const a = 0.035, t = 0.05;   // action safe 93%, title safe 90%
+    svg += rect(W * a, H * a, W * (1 - 2 * a), H * (1 - 2 * a), 'none', `stroke="#16F4D4" stroke-width="${3 * u}" stroke-dasharray="${14 * u} ${10 * u}"`);
+    svg += rect(W * t, H * t, W * (1 - 2 * t), H * (1 - 2 * t), 'none', `stroke="#F5A50C" stroke-width="${3 * u}" stroke-dasharray="${14 * u} ${10 * u}"`);
+    svg += label(W * t + 10 * u, H * t + 34 * u, 'タイトルセーフ 90%') + label(W * a + 10 * u, H * (1 - a) - 12 * u, 'アクションセーフ 93%');
+  } else if (!tall) {
+    svg += label(W / 2, 48 * u, `${safeMode === 'all' ? 'SNS' : SAFE[safeMode].name} の枠は 9:16 用です（いまは ${S.project.aspect}）`, 'middle');
+  } else {
+    const list = safeMode === 'all' ? Object.values(SAFE) : [SAFE[safeMode]];
+    const z = { t: Math.max(...list.map(p => p.t)), r: Math.max(...list.map(p => p.r)), b: Math.max(...list.map(p => p.b)), l: Math.max(...list.map(p => p.l)) };
+    const x0 = W * z.l, y0 = H * z.t, x1 = W * (1 - z.r), y1 = H * (1 - z.b), shade = 'rgba(255,60,90,0.22)';
+    svg += rect(0, 0, W, y0, shade) + rect(0, y1, W, H - y1, shade) + rect(0, y0, x0, y1 - y0, shade) + rect(x1, y0, W - x1, y1 - y0, shade);
+    // rough shapes of the app UI: tabs on top, a column of buttons on the right, caption lines at the bottom
+    const ui = 'rgba(255,255,255,0.55)';
+    svg += rect(W * 0.3, H * 0.035, W * 0.16, 10 * u, ui, `rx="${5 * u}"`) + rect(W * 0.54, H * 0.035, W * 0.16, 10 * u, ui, `rx="${5 * u}"`);
+    const cx = W * (1 - z.r / 2), r = Math.min(W * z.r * 0.3, 34 * u);
+    for (let i = 0; i < 5; i++) svg += `<circle cx="${cx}" cy="${y1 - (i + 0.6) * r * 3.1}" r="${r}" fill="${ui}"/>`;
+    svg += rect(W * 0.05, H * (1 - z.b * 0.78), W * 0.3, 16 * u, ui, `rx="${8 * u}"`) + rect(W * 0.05, H * (1 - z.b * 0.62), W * 0.62, 12 * u, ui, `rx="${6 * u}"`) + rect(W * 0.05, H * (1 - z.b * 0.5), W * 0.48, 12 * u, ui, `rx="${6 * u}"`);
+    svg += rect(x0, y0, x1 - x0, y1 - y0, 'none', `stroke="#16F4D4" stroke-width="${4 * u}" stroke-dasharray="${16 * u} ${10 * u}"`);
+    svg += label(x0 + 12 * u, y0 + 36 * u, `セーフエリア（${list.map(p => p.name).join('・')}・目安）`);
+  }
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${svg}</svg>`;
+}
+function positionSafeOverlay() {
+  const box = $('safeOverlay'); if (!box) return;
+  const vpEl = $('viewport'), view = $('view').getBoundingClientRect(), viewport = vpEl.getBoundingClientRect();
+  // absolute offsets start inside the viewport's border
+  Object.assign(box.style, { left: `${view.left - viewport.left - vpEl.clientLeft}px`, top: `${view.top - viewport.top - vpEl.clientTop}px`, width: `${view.width}px`, height: `${view.height}px` });
+}
+function setSafeMode(m) {
+  safeMode = m in SAFE || m === 'all' || m === 'broadcast' ? m : 'off';
+  try { localStorage.setItem(SAFE_KEY, safeMode); } catch (e) {}
+  positionSafeOverlay(); drawSafeOverlay();
+}
+
 function sizeViewport() {
   const vp = $('viewport'), c = $('view');
   const ar = S.plan.W / S.plan.H;
@@ -229,6 +285,7 @@ function sizeViewport() {
   if (c.width !== pw || c.height !== ph) { c.width = pw; c.height = ph; }
   c.style.width = cssW + 'px'; c.style.height = cssH + 'px';
   positionAreaEditor();
+  positionSafeOverlay(); drawSafeOverlay();
   S.need = true;
 }
 function draw() {
@@ -2088,6 +2145,7 @@ function bind() {
   $('ePalette').addEventListener('click', () => { if (S.project.lib === true) pickLibPalette(); else randomPalette(); restartPreview(); });
   $('libPalSwap').addEventListener('click', () => { const v = S.project.colors.palette; if (v) setLibPalette(Object.assign({}, v, { v: (v.v | 0) + 1 }), `配色ライブラリ：${v.id}（背景を切り替え）`); });
   $('libPalClear').addEventListener('click', () => setLibPalette(null));
+  $('safeMode').addEventListener('change', e => setSafeMode(e.target.value));
   $('libPalRandom').addEventListener('click', pickLibPalette);
   // 利用について（出力物の権利・ライセンス）
   const dlg = $('termsDlg');
