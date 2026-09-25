@@ -10,6 +10,7 @@ read = lambda p: open(p, encoding='utf-8').read()
 sources = sorted(glob.glob('src/*.js'))
 js = '\n'.join(read(f) for f in sources)
 mux = '/*! mp4-muxer v5.2.2 | MIT License | (c) 2023 Vanilagy | see THIRD_PARTY_NOTICES.md */\n' + read('vendor/mp4-muxer.min.js')
+qr = '/*! qrcode-generator v1.4.4 | MIT License | (c) 2009 Kazuhiko Arase | see THIRD_PARTY_NOTICES.md */\n' + read('vendor/qrcode-generator.js')
 def build(lang):
     english = lang == 'en'
     local = lang in i18n.MODULES
@@ -58,6 +59,9 @@ def build(lang):
 {body}
 <script>
 {mux}
+</script>
+<script>
+{qr}
 </script>
 <script>
 {script}

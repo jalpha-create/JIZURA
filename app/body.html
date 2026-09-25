@@ -171,6 +171,16 @@
           <div id="eFavList" class="fav-list"></div>
         </div>
         <div class="easy-sec">
+          <h3>タイトル・最後のカード</h3>
+          <label class="check"><input data-card="title" data-key="on" type="checkbox"><span>冒頭にタイトルカード<small>曲名・アーティスト名を大きく出します</small></span></label>
+          <label class="check"><input data-card="cta" data-key="on" type="checkbox"><span>最後にカード<small>呼びかけの文字と QR コード</small></span></label>
+          <div class="fields card-fields">
+            <label class="field field-wide">最後の大きな文字<input data-card="cta" data-key="text" type="text" maxlength="80" placeholder="例：配信中"></label>
+            <label class="field field-wide">QR コードにする URL<input data-card="cta" data-key="qr" type="text" maxlength="600" placeholder="https://…"></label>
+          </div>
+          <p class="hint">ロゴ・日付・秒数は「詳細」→「カード」タブで設定できます。</p>
+        </div>
+        <div class="easy-sec">
           <h3>ここだけ変える</h3>
           <div class="easy-grid">
             <button id="eStyle" title="スタイルだけ別のものに">スタイル</button>
@@ -205,6 +215,7 @@
         <button role="tab" data-tab="style" aria-selected="true">スタイル</button>
         <button role="tab" data-tab="fx" aria-selected="false">演出</button>
         <button role="tab" data-tab="tech" aria-selected="false">手法</button>
+        <button role="tab" data-tab="cards" aria-selected="false">カード</button>
         <button role="tab" data-tab="out" aria-selected="false">書き出し</button>
       </nav>
 
@@ -273,6 +284,37 @@
         </div>
         <div class="row" style="margin-bottom:10px"><input id="techFilter" type="text" placeholder="手法を名前で絞り込み" style="flex:1" aria-label="手法を名前で絞り込み"><span id="techTotal" class="muted mono"></span></div>
         <div id="techLists"></div>
+      </div>
+
+      <div class="tabpane" data-pane="cards" hidden>
+        <p class="hint">曲の頭と終わりに、画面いっぱいのカードを重ねます。配色と書体はいまの案（ブランドキットを使っているときはブランド）に合わせます。書き出しにも入ります（AE 用の書き出しには入りません）。</p>
+        <h3>タイトルカード（冒頭）</h3>
+        <label class="check"><input data-card="title" data-key="on" type="checkbox"><span>冒頭にタイトルカードを出す<small>曲名・アーティスト名・ロゴ・日付を大きく出します。自動で出るタイトル表示の代わりになります</small></span></label>
+        <div class="fields card-fields">
+          <label class="field">表示する秒数<input data-card="title" data-key="dur" type="number" min="0.8" max="15" step="0.1"></label>
+          <label class="field field-wide">大きな文字<input data-card="title" data-key="text" type="text" maxlength="80" placeholder="空欄なら曲名"></label>
+          <label class="field field-wide">小さな文字<input data-card="title" data-key="sub" type="text" maxlength="80" placeholder="空欄ならアーティスト名"></label>
+          <label class="field field-wide">日付<span class="card-date"><input data-card="title" data-key="date" type="text" maxlength="40" placeholder="例：2026.10.01 RELEASE"><button class="ghost small card-today" data-card="title" type="button">今日</button></span></label>
+          <label class="field">ロゴ<select data-card="title" data-key="logo"><option value="none">なし</option><option value="brand">ブランドキットのロゴ</option><option value="custom">画像を選ぶ</option></select></label>
+          <label class="file" id="card-title-logofile" hidden>画像を選ぶ（PNG / SVG / JPG）<input class="card-logofile" data-card="title" type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp"></label>
+          <span id="card-title-lognote" class="muted card-lognote"></span>
+        </div>
+        <p id="card-title-empty" class="hint card-warn" hidden>曲名・アーティスト名が空なので、タイトルカードは出ません。画面上部の「曲名」「アーティスト」か、上の「大きな文字」に入れてください。</p>
+        <button class="ghost small card-show" data-card="title" type="button">プレビューで見る</button>
+        <h3>最後のカード（CTA）</h3>
+        <label class="check"><input data-card="cta" data-key="on" type="checkbox"><span>最後にカードを出す<small>「配信中」「プロフィールのリンクから」などの呼びかけと、QR コード・ロゴ・日付を最後の数秒に出します</small></span></label>
+        <div class="fields card-fields">
+          <label class="field">表示する秒数<input data-card="cta" data-key="dur" type="number" min="0.8" max="15" step="0.1"></label>
+          <label class="field field-wide">大きな文字<input data-card="cta" data-key="text" type="text" maxlength="80" placeholder="例：配信中"></label>
+          <label class="field field-wide">小さな文字<input data-card="cta" data-key="sub" type="text" maxlength="120" placeholder="例：@jalpha_create ／ URL"></label>
+          <label class="field field-wide">QR コードにする URL・文字<input data-card="cta" data-key="qr" type="text" maxlength="600" placeholder="https://…"></label>
+          <div class="card-qr"><canvas id="cardCtaQrPrev" width="96" height="96" hidden></canvas><span id="cardCtaQrNote" class="muted"></span></div>
+          <label class="field field-wide">日付<span class="card-date"><input data-card="cta" data-key="date" type="text" maxlength="40" placeholder="例：2026.10.01 RELEASE"><button class="ghost small card-today" data-card="cta" type="button">今日</button></span></label>
+          <label class="field">ロゴ<select data-card="cta" data-key="logo"><option value="none">なし</option><option value="brand">ブランドキットのロゴ</option><option value="custom">画像を選ぶ</option></select></label>
+          <label class="file" id="card-cta-logofile" hidden>画像を選ぶ（PNG / SVG / JPG）<input class="card-logofile" data-card="cta" type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp"></label>
+          <span id="card-cta-lognote" class="muted card-lognote"></span>
+        </div>
+        <button class="ghost small card-show" data-card="cta" type="button">プレビューで見る</button>
       </div>
 
       <div class="tabpane" data-pane="out" hidden>

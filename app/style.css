@@ -519,3 +519,18 @@ button.small.primary { padding: 4px 12px; }
 .unify-box { margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .center-dir { gap: 6px; margin: -2px 0 8px 26px; font-size: 12px; }
 .center-dir select { width: auto; }
+
+/* jAlpha edition: タイトル／最後のカード */
+.card-fields { margin: 8px 0; }
+.card-date { display: flex; gap: 6px; align-items: center; }
+.card-date input { flex: 1; min-width: 0; }
+.card-qr { display: flex; gap: 10px; align-items: center; grid-column: 1 / -1; font-size: 12px; }
+.card-qr canvas { width: 72px; height: 72px; border-radius: 4px; image-rendering: pixelated; }
+.card-lognote { font-size: 11px; align-self: end; }
+[data-pane="cards"] h3 { margin-top: 18px; }
+.card-warn { color: var(--amber); }
+/* jAlpha edition: five tabs (カード added) fit on one row */
+.tabs { grid-template-columns: repeat(5, 1fr); }
+.tabs button { padding-left: 2px; padding-right: 2px; font-size: 12px; white-space: nowrap; }
+html[lang=en] .tabs button { white-space: normal; }
+.card-fields .field-wide, .card-fields .card-lognote, .card-fields .file { grid-column: 1 / -1; }

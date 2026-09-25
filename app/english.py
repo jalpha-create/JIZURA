@@ -590,6 +590,35 @@ FORK_MEDIA = dict(FORK_UI, **{
 
 # jAlpha edition additions. Applied before the fork and original glossaries.
 JALPHA_BODY = {
+    "曲の頭と終わりに、画面いっぱいのカードを重ねます。配色と書体はいまの案（ブランドキットを使っているときはブランド）に合わせます。書き出しにも入ります（AE 用の書き出しには入りません）。": "Full-frame cards at the start and end of the song, in the current look’s colors and fonts (the brand’s when a brand kit is in use). They are exported too (not in the AE export).",
+    "<h3>タイトルカード（冒頭）</h3>": "<h3>Title card (start)</h3>",
+    "冒頭にタイトルカードを出す": "Show a title card at the start",
+    "曲名・アーティスト名・ロゴ・日付を大きく出します。自動で出るタイトル表示の代わりになります": "Shows the title, artist, logo and date large. Replaces the automatic title",
+    "<h3>最後のカード（CTA）</h3>": "<h3>End card (CTA)</h3>",
+    "最後にカードを出す": "Show an end card",
+    "「配信中」「プロフィールのリンクから」などの呼びかけと、QR コード・ロゴ・日付を最後の数秒に出します": "A call to action such as “Out now” or “Link in bio”, with a QR code, logo and date, for the last few seconds",
+    "表示する秒数<input": "Seconds<input",
+    "大きな文字<input": "Large text<input",
+    "小さな文字<input": "Small text<input",
+    "placeholder=\"空欄なら曲名\"": "placeholder=\"Blank: song title\"",
+    "placeholder=\"空欄ならアーティスト名\"": "placeholder=\"Blank: artist\"",
+    "placeholder=\"例：配信中\"": "placeholder=\"e.g. Out now\"",
+    "placeholder=\"例：@jalpha_create ／ URL\"": "placeholder=\"e.g. @handle / URL\"",
+    "placeholder=\"例：2026.10.01 RELEASE\"": "placeholder=\"e.g. 2026.10.01 RELEASE\"",
+    "QR コードにする URL・文字<input": "QR code URL or text<input",
+    ">日付<span class=\"card-date\">": ">Date<span class=\"card-date\">",
+    "type=\"button\">今日</button>": "type=\"button\">Today</button>",
+    ">ロゴ<select data-card=": ">Logo<select data-card=",
+    "<option value=\"none\">なし</option><option value=\"brand\">ブランドキットのロゴ</option><option value=\"custom\">画像を選ぶ</option>": "<option value=\"none\">None</option><option value=\"brand\">Brand kit logo</option><option value=\"custom\">Choose image</option>",
+    "type=\"button\">プレビューで見る</button>": "type=\"button\">Show in preview</button>",
+    "曲名・アーティスト名が空なので、タイトルカードは出ません。画面上部の「曲名」「アーティスト」か、上の「大きな文字」に入れてください。": "The title and artist are empty, so no title card is shown. Fill in the title / artist at the top, or the large text above.",
+    "<h3>タイトル・最後のカード</h3>": "<h3>Title & end cards</h3>",
+    "冒頭にタイトルカード<small>曲名・アーティスト名を大きく出します</small>": "Title card at the start<small>Shows the title and artist large</small>",
+    "最後にカード<small>呼びかけの文字と QR コード</small>": "End card<small>A call to action and a QR code</small>",
+    "最後の大きな文字<input": "End card text<input",
+    "QR コードにする URL<input": "QR code URL<input",
+    "ロゴ・日付・秒数は「詳細」→「カード」タブで設定できます。": "Set the logo, date and length in Advanced → Cards.",
+    "data-tab=\"cards\" aria-selected=\"false\">カード</button>": "data-tab=\"cards\" aria-selected=\"false\">Cards</button>",
     '>名前<input id="brandName"': '>Name<input id="brandName"',
     "ブランドキットをファイルに保存（別のブラウザやPCへ移すとき）": "Save brand kits to a file (to move them to another browser or PC)",
     "保存したブランドキットのファイルを読み込んで追加": "Load a saved brand kit file and add its kits",
@@ -644,6 +673,13 @@ JALPHA_BODY = {
 }
 
 JALPHA_UI = {
+    "'URL や文字を入れると、最後のカードに QR コードが出ます'": "'Enter a URL or text to show a QR code on the end card'",
+    "'スマホで読み取れるか、書き出す前に確かめてください'": "'Check that a phone can read it before you export'",
+    "'長すぎて QR コードにできません（短い URL にしてください）'": "'Too long for a QR code (use a shorter URL)'",
+    "`「${S.project.brand.name}」のロゴを使います`": "`Uses the logo of “${S.project.brand.name}”`",
+    "'ブランドキットにロゴがないので、ロゴは出ません'": "'The brand kit has no logo, so no logo is shown'",
+    "'選んだ画像を使います'": "'Uses the chosen image'",
+    "'まだ画像を選んでいません'": "'No image chosen yet'",
     "'ブランドキットを保存できませんでした（ブラウザの保存容量がいっぱいです。ロゴを小さくしてください）'": "'Could not save brand kits (browser storage is full; use a smaller logo)'",
     "`ブランド：${b.name}（配色と書体はブランドの設定が優先されます）`": "`Brand: ${b.name} (its colors and fonts take priority)`",
     "'ブランド：使わない'": "'Brand: off'",
@@ -712,6 +748,8 @@ JALPHA_UI = {
 }
 
 
+JALPHA_CARDS = {"text: '配信中'": "text: 'Out now'"}
+
 def localize_body(source):
     return replace_copy(replace_copy(replace_copy(source, JALPHA_BODY), FORK_BODY), BODY).replace('You own the<strong>', 'You own the <strong>')
 
@@ -723,6 +761,8 @@ def localize_js(source, filename):
         return replace_copy(source, FORK_MEDIA)
     if filename.endswith('08c_jev.js'):
         return replace_copy(source, FORK_JEV_ERRORS)
+    if filename.endswith('11u_cards.js'):
+        return replace_copy(source, JALPHA_CARDS)
     if filename.endswith('11_export.js'):
         return replace_copy(source, EXPORT)
     return source

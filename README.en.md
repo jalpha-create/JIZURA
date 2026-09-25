@@ -28,6 +28,8 @@ The **Foreground**, **Lyrics**, and **Background** tabs let you place uploaded i
 
 **Favorites** (jAlpha edition): press ☆ to keep the current look (style, mood, arrangement seed, effects, fonts and colors) with a thumbnail, then click it to bring the look back, even for another song. Per-line settings come back only when the lyrics match. Rename or delete favorites, and save/load them as a file from the top of the Style tab.
 
+**Title & end cards** (jAlpha edition): full-frame cards at the start (title, artist, logo, date — replaces the automatic title) and the end (call to action, **QR code**, logo, date) in the current look's colors and fonts, from Advanced → Cards. They appear in the preview and every export (not in the AE export). QR codes are made in the browser with the bundled qrcode-generator (MIT).
+
 **Brand kits** (jAlpha edition): create any number of kits (2–5 brand colors with a chosen background, fonts for the three roles, and a logo with position, size and opacity) from the Style tab. While a project uses a kit, its colors and fonts stay fixed through 1-click looks, and the logo is drawn over every cut in exports. Kits live in the browser (save/load them as a file); a project file carries a copy of its kit.
 
 **Safe area guide** (jAlpha edition): the Safe area menu next to the play controls overlays what TikTok, Instagram Reels or YouTube Shorts cover on a 9:16 frame (approximate, measured on 1080×1920), or broadcast action/title safe for any ratio. It is preview-only and never exported.

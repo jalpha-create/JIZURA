@@ -29,6 +29,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## qrcode-generator 1.4.4 (bundled, jAlpha edition)
+
+`vendor/qrcode-generator.js` is embedded in `index.html` and is used to draw QR codes on the CTA card.
+Source: https://github.com/kazuhikoarase/qrcode-generator (npm `qrcode-generator@1.4.4`, integrity
+`sha512-HM7yY8O2ilqhmULxGMpcHSF1EhJJ9yBj8gvDEuZ6M+KGJ0YY2hKpnXvRD+hZPLrDVck3ExIGhmPtSdcjC+guuw==`) — licensed under
+the MIT License, Copyright (c) 2009 Kazuhiko Arase. The full license text is in `vendor/LICENSE.qrcode-generator.txt`.
+"QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
+
 ## Fonts (not bundled)
 
 The web app loads the following typefaces at runtime from Google Fonts (https://fonts.google.com/); they are not

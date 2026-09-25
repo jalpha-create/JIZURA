@@ -104,3 +104,11 @@
 - 確認: 既存テスト（media/lyric/jev、jev_server）成功。6言語ページの JS 構文チェック OK。ブラウザで全機能の要素の存在、おまかせ・シャッフル・統一感・文字整列・中央を空ける・セーフエリアを重ねて120フレーム描画でエラーなし。別の headless Edge（Playwright）で MP4 720p／1080p を書き出し（H.264・サイズと長さ正しい・再試行なし）、upstream の公開版と同条件で同じ結果。まとめて書き出し3本も正しい。歌詞表示エリアの行は帯に入らず、他の行は帯に入ることを確認。
 - 既知の制限: 中国語・韓国語・インドネシア語版では、hirazi 版と jAlpha edition の追加機能の文言が日本語のまま（それぞれの翻訳表に無いため。check_i18n で 169〜190件）。`dev/new_features_test.cjs`（hirazi のテスト）は Node 版 Playwright が必要で未実行。Claude のプレビュー枠が非表示のときは WebCodecs のエンコードが止まるので、書き出しの検証は別の headless Edge で行う（scratchpad の export_check.py / batch_check.py）。
 - ③ タイトル／CTAカードは `feat/title-cta` に作業途中で保存（エンジンと QR ライブラリまで）。この取り込みのあとに main から作り直す。
+
+## 2026-09-25 ③ タイトルカード・最後のカード（ロゴ・QRコード・日付）
+
+- 取り込み後の main からブランチ `feat/cards` を切り直し、途中だった `feat/title-cta` から `src/11u_cards.js`・`vendor/qrcode-generator.js`（1.4.4, MIT, npm integrity 一致）・ライセンスを移した。build.py は upstream の新しい多言語ビルドに QR 用の `<script>` を追加（mp4-muxer の次。CEP の muxer ガードの位置を崩さないため）。
+- エンジン `src/11u_cards.js`: `project.cards = { title, cta }`。`J.plan` をラップしてカードの時間帯を plan に載せ（タイトルカードがあるときは自動のタイトルカットを外す。中身が何もないときは描かず自動タイトルのまま）、`Renderer.frame` の最外周の後に全画面で描画（配色・書体はいまの案、キー出力はキー色、透過PNGは塗らない、後景レイヤーには描かない）。カードの文字は `J.ensureFonts` をラップして読み込み対象に追加。QR は UTF-8・誤り訂正 M・白地黒・余白4モジュール。
+- UI: 詳細モードに「カード」タブ（5タブが1行に収まるよう CSS 調整）、かんたんモードに簡易欄。`data-card`/`data-key` の汎用バインド、オンにするとプレビューがカードの場面へ移動、「今日」ボタン、ロゴはブランドキット／カードごとの画像、QR のプレビューと長すぎる場合の案内、タイトルが空のときの案内。書き出し前に `J.cardsReady` でロゴのデコードを待つ。
+- 英語版: 画面文言を JALPHA_BODY/UI に追加、初期値「配信中」は英語版で "Out now"（`localize_js` に 11u_cards.js を追加）。中国語・韓国語・インドネシア語版は日本語のまま。
+- 確認: 別の headless Edge でカードを 16:9／9:16 の 1080p 画像に書き出し、OpenCV で QR を読み取って入力した URL と一致。見た目も目視。見出し書体は両カードとも Noto Sans JP Black で読み込み済み。既存テスト・ページ構文チェック・MP4 720p/1080p 書き出し OK。

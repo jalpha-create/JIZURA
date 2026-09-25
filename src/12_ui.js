@@ -1576,7 +1576,7 @@ const brandHasColors = () => brandActive() && J.brandColors(S.project.brand).len
 function useBrand(id) {
   const b = BR.list.find(x => x.id === id);
   S.project.brand = b ? JSON.parse(JSON.stringify(b)) : null;
-  fontKey = ''; renderBrands(); renderColors(); renderFontRoles(); replan(); flushSave();
+  fontKey = ''; renderBrands(); renderCards(); renderColors(); renderFontRoles(); replan(); flushSave();
   toast(b ? `ブランド：${b.name}（配色と書体はブランドの設定が優先されます）` : 'ブランド：使わない');
   restartPreview();
 }
@@ -1706,6 +1706,70 @@ function bindBrands() {
   $('brandSave').addEventListener('click', e => { e.preventDefault(); if (saveBrandDraft()) $('brandDlg').close(); });
   $('brandCancel').addEventListener('click', e => { e.preventDefault(); $('brandDlg').close(); });
   $('brandDlg').addEventListener('close', () => { BR.draft = null; });
+}
+
+/* ---------------- タイトル／最後のカード (jAlpha edition, engine: src/11u_cards.js) ----------------
+   form fields carry data-card="title|cta" data-key="…"; the project keeps S.project.cards = { title, cta } */
+const cardOf = k => J.cardsOf(S.project)[k];
+function setCard(k, key, v, quiet) {
+  const cards = S.project.cards = Object.assign({}, S.project.cards);
+  cards[k] = Object.assign({}, J.CARD_DEFAULTS[k], cards[k], { [key]: v });
+  markUndoGroup(`card:${k}:${key}`);
+  if (quiet) replanSoon(250); else replan();
+  renderCards();
+}
+const todayStr = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`; };
+function showCard(k) {   // jump the preview to the card so the change can be seen
+  const c = S.plan && S.plan.cards && S.plan.cards[k]; if (!c) return;
+  pause(); seek(k === 'title' ? Math.min(c.end - 0.05, c.start + 0.9) : Math.min(S.plan.duration - 0.05, c.start + 1.1));
+}
+function drawQrPreview() {
+  const cv = $('cardCtaQrPrev'); if (!cv) return;
+  const text = String(cardOf('cta').qr || '').trim(), m = text ? J.qrMatrix(text) : null, x = cv.getContext('2d');
+  x.clearRect(0, 0, cv.width, cv.height);
+  cv.hidden = !m;
+  if (m) { const n = m.length, q = 2, cell = cv.width / (n + q * 2); x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height); x.fillStyle = '#000'; for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (m[r][c]) x.fillRect(Math.floor((c + q) * cell), Math.floor((r + q) * cell), Math.ceil(cell), Math.ceil(cell)); }
+  $('cardCtaQrNote').textContent = !text ? 'URL や文字を入れると、最後のカードに QR コードが出ます' : m ? 'スマホで読み取れるか、書き出す前に確かめてください' : '長すぎて QR コードにできません（短い URL にしてください）';
+}
+function renderCards() {
+  const cards = J.cardsOf(S.project);
+  document.querySelectorAll('[data-card]').forEach(el => {
+    const v = cards[el.dataset.card][el.dataset.key];
+    if (el.type === 'checkbox') el.checked = !!v;
+    else if (document.activeElement !== el && el.type !== 'file') el.value = v == null ? '' : v;
+  });
+  for (const k of ['title', 'cta']) {
+    const c = cards[k], wrap = $(`card-${k}-logofile`);
+    if (wrap) wrap.hidden = c.logo !== 'custom';
+    const note = $(`card-${k}-lognote`);
+    if (note) note.textContent = c.logo === 'brand' ? (S.project.brand && S.project.brand.logo ? `「${S.project.brand.name}」のロゴを使います` : 'ブランドキットにロゴがないので、ロゴは出ません') : c.logo === 'custom' ? (c.logoSrc ? '選んだ画像を使います' : 'まだ画像を選んでいません') : '';
+  }
+  const tn = $('card-title-empty');
+  if (tn) { const c = cards.title, has = c.text || c.sub || c.date || S.project.title || S.project.artist || (S.plan && (S.plan.title || S.plan.artist)) || (c.logo === 'brand' ? S.project.brand && S.project.brand.logo : c.logo === 'custom' && c.logoSrc);
+    tn.hidden = !c.on || !!has; }
+  drawQrPreview();
+}
+function bindCards() {
+  document.querySelectorAll('[data-card]').forEach(el => {
+    if (el.type === 'file') return;
+    const k = el.dataset.card, key = el.dataset.key;
+    const ev = el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(ev, () => {
+      const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value : el.value;
+      setCard(k, key, v, ev === 'input');
+      if (el.type === 'checkbox' && v) setTimeout(() => showCard(k), 60);
+    });
+  });
+  document.querySelectorAll('.card-today').forEach(b => b.addEventListener('click', () => { setCard(b.dataset.card, 'date', todayStr()); showCard(b.dataset.card); }));
+  document.querySelectorAll('.card-show').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.card; if (!cardOf(k).on) setCard(k, 'on', true);
+    setTimeout(() => showCard(k), 60);
+  }));
+  document.querySelectorAll('.card-logofile').forEach(inp => inp.addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { setCard(inp.dataset.card, 'logoSrc', await readLogoFile(f)); showCard(inp.dataset.card); }
+    catch (err) { toast('ロゴ：' + (err.message || err)); }
+  }));
 }
 
 /* ---------------- history of looks (◀ ▶) ---------------- */
@@ -2103,7 +2167,7 @@ async function runBatchExport() {
       const plan = aspect === S.project.aspect ? S.plan : J.plan(project, audioLike());
       setText(`${tag} 準備中…`);
       await J.ensureFonts(S.project.lyrics + (S.project.title || '') + (S.project.artist || '') + HUD_CHARS, J.fontsOfPlan(plan));
-      await J.brandReady(plan);
+      await J.brandReady(plan); await J.cardsReady(plan);
       const r = await J.exportMP4({
         plan, project, audio: S.project.includeAudio !== false ? S.audio : null, quality: S.project.quality || 'high', signal: ac.signal,
         onProgress: (p, m) => { setBar((k + p) / list.length); setText(`${tag} ${m}`); },
@@ -2149,7 +2213,7 @@ async function runExport(kind) {
   const t0 = performance.now();
   try {
     await J.ensureFonts(S.project.lyrics + (S.project.title || '') + (S.project.artist || '') + HUD_CHARS, J.fontsOfPlan(S.plan));
-    await J.brandReady(S.plan);
+    await J.brandReady(S.plan); await J.cardsReady(S.plan);
     if (kind === 'mp4' || kind === 'mp4file') {
       const plan = S.plan, range = exportRange(), span = J.exportSpan(plan, range);
       const r = await J.exportMP4({ plan, project: S.project, audio: S.project.includeAudio !== false ? S.audio : null, quality: S.project.quality || 'high', onProgress, signal: ac.signal, range, file });
@@ -2239,7 +2303,7 @@ function updateTap() {
 
 /* ---------------- sync all inputs from project ---------------- */
 function syncUI() {
-  renderBrands();
+  renderBrands(); renderCards();
   $('songTitle').value = S.project.title || ''; $('songArtist').value = S.project.artist || '';
   $('lyrics').value = S.project.lyrics;
   $('jevPrompt').value = S.project.jevPrompt || '';
@@ -2342,8 +2406,8 @@ function bind() {
     const l = J.resolveLang(S.project);
     toast((S.project.lang === 'auto' ? '歌詞の言語：自動判定 → ' : '歌詞の言語：') + J.LANG_LABEL[l]);
   });
-  $('songTitle').addEventListener('input', e => { S.project.title = e.target.value; markUndoGroup('title'); replanSoon(300); });
-  $('songArtist').addEventListener('input', e => { S.project.artist = e.target.value; markUndoGroup('artist'); replanSoon(300); });
+  $('songTitle').addEventListener('input', e => { S.project.title = e.target.value; markUndoGroup('title'); replanSoon(300); renderCards(); });
+  $('songArtist').addEventListener('input', e => { S.project.artist = e.target.value; markUndoGroup('artist'); replanSoon(300); renderCards(); });
   $('btnSyntax').addEventListener('click', e => { const s = $('syntax'); s.hidden = !s.hidden; e.target.setAttribute('aria-expanded', String(!s.hidden)); });
   $('bpm').addEventListener('change', e => { S.project.timing.bpm = Math.max(0, parseFloat(e.target.value) || 0); replan(); });
   $('offset').addEventListener('change', e => { S.project.timing.offset = Math.max(0, parseFloat(e.target.value) || 0); replan(); });
@@ -2774,7 +2838,7 @@ function boot() {
   S.project = loadLocal();
   cleanupDeletedMedia();
   initUndo();
-  bind(); bindBrands(); initVolume(); loadFavs(); renderFavs(); loadBrands(); syncUI(); replan();
+  bind(); bindBrands(); bindCards(); initVolume(); loadFavs(); renderFavs(); loadBrands(); syncUI(); replan();
   restoreMediaAssets();
   J.restoreFontFiles(S.project.userFonts).then(() => { fontKey = ''; ensureFonts(); S.need = true; }).catch(() => {});
   let mode = 'easy'; try { mode = localStorage.getItem('jizura.mode') || 'easy'; } catch (e) {}
