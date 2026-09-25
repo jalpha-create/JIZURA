@@ -27,6 +27,8 @@ The **Foreground**, **Lyrics**, and **Background** tabs let you place uploaded i
 
 **Favorites** (jAlpha edition): press ☆ to keep the current look (style, mood, arrangement seed, effects, fonts and colors) with a thumbnail, then click it to bring the look back, even for another song. Per-line settings come back only when the lyrics match. Rename or delete favorites, and save/load them as a file from the top of the Style tab.
 
+**Brand kits** (jAlpha edition): create any number of kits (2–5 brand colors with a chosen background, fonts for the three roles, and a logo with position, size and opacity) from the Style tab. While a project uses a kit, its colors and fonts stay fixed through 1-click looks, and the logo is drawn over every cut in exports. Kits live in the browser (save/load them as a file); a project file carries a copy of its kit.
+
 **Safe area guide** (jAlpha edition): the Safe area menu next to the play controls overlays what TikTok, Instagram Reels or YouTube Shorts cover on a 9:16 frame (approximate, measured on 1080×1920), or broadcast action/title safe for any ratio. It is preview-only and never exported.
 
 **Batch export** (jAlpha edition) saves one MP4 per selected aspect ratio (16:9, 9:16 and 1:1 by default). Each ratio is re-arranged for its frame from the same seed, and files are named like `title_16x9.mp4`. Chrome asks once to allow multiple downloads.

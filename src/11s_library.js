@@ -57,7 +57,7 @@ J.paletteSchemes = (pal, baseSchemes) => {
   const cols = (lib ? lib.colors : pal.cols || []).filter(c => /^#[0-9a-f]{6}$/i.test(c));
   if (cols.length < 2) return baseSchemes;
   const order = J.paletteBgOrder(cols);
-  const bg0 = order[((pal.v | 0) % order.length + order.length) % order.length];
+  const bg0 = pal.bg && cols.includes(pal.bg) ? pal.bg : order[((pal.v | 0) % order.length + order.length) % order.length];   // brand kits name their background
   // second background: the palette colour furthest from the first; third: the most vivid one left
   const bg1 = [...cols].filter(c => c !== bg0).sort((a, b) => J.contrast(b, bg0) - J.contrast(a, bg0))[0];
   const bgs = [bg0, bg1];

@@ -1266,6 +1266,7 @@ function drawSwatch() {
   $('paletteSwatch').innerHTML = swatchHTML([sc.accent, sc.ghostA, sc.ghostB]);
 }
 function randomPalette() {
+  if (brandHasColors()) { toast('ブランドの配色を使用中です（ブランドを「使わない」にすると変えられます）'); return; }
   remember();
   const c = S.project.colors;
   const sc0 = effScheme0();
@@ -1284,11 +1285,11 @@ const libCat = c => (libEn() ? LIB_CAT_EN[c] || c : c);
 const libPalTitle = p => libEn() ? `${p.id} · ${libCat(p.category)}` : `${p.id} ${p.name}（${p.category}）`;
 let libCatSel = '';
 /* the main scheme as it is drawn now (palette included), for colour pickers and random accents */
-function effScheme0() {
-  const st = J.STYLES[S.project.style] || J.STYLES.noir, c = S.project.colors;
-  return c.palette && J.paletteSchemes ? J.paletteSchemes(c.palette, st.schemes)[0] : st.schemes[0];
+function effScheme0() {   // brand and palette included; the green / black key is ignored here
+  return J.resolveStyle(Object.assign({}, S.project, { keyBg: 'off' })).schemes[0];
 }
 function setLibPalette(val, msg) {
+  if (val && brandHasColors()) { toast('ブランドの配色を使用中です（ブランドを「使わない」にすると変えられます）'); return; }
   remember();
   const c = S.project.colors;
   if (val) { c.palette = val; c.accentOn = false; c.enabled = false; } else delete c.palette;
@@ -1296,6 +1297,7 @@ function setLibPalette(val, msg) {
   if (val) { const sc = effScheme0(); toast(msg || `配色ライブラリ：${val.id}`, [sc.bg, sc.fg, sc.accent, sc.ghostA, sc.ghostB]); } else toast('配色ライブラリ：解除（スタイルの配色）');
 }
 function pickLibPalette() {
+  if (brandHasColors()) { toast('ブランドの配色を使用中です（ブランドを「使わない」にすると変えられます）'); return; }
   const cur = S.project.colors.palette; let v, guard = 0;
   do { v = J.randomLibPalette(); } while (v && cur && v.id === cur.id && guard++ < 6);
   if (v) setLibPalette(v);
@@ -1337,6 +1339,157 @@ function libOmakase(r) {
     const v = J.randomLibPalette();
     if (v) { r.colors.palette = v; r.colors.accentOn = false; }
   } else delete r.colors.palette;
+}
+
+/* ---------------- ブランドキット (jAlpha edition, engine: src/11t_brand.js) ----------------
+   kits are kept in this browser (any number); the project keeps a copy of the active one in project.brand */
+const BRAND_KEY = 'jizura.brands.v1', BRAND_MAX_COLORS = 5;
+const BRAND_POS_LABEL = { br: '右下', bl: '左下', tr: '右上', tl: '左上', bc: '下中央', tc: '上中央' };
+const BR = { list: [], draft: null };
+function loadBrands() {
+  try { const a = JSON.parse(localStorage.getItem(BRAND_KEY) || '[]'); BR.list = Array.isArray(a) ? a.filter(b => b && b.id && b.name) : []; } catch (e) { BR.list = []; }
+  const cur = S.project.brand;   // a project opened from a file may bring a kit this browser does not have yet
+  if (cur && cur.id && !BR.list.some(b => b.id === cur.id)) { BR.list.push(JSON.parse(JSON.stringify(cur))); saveBrands(); }
+}
+function saveBrands() {
+  try { localStorage.setItem(BRAND_KEY, JSON.stringify(BR.list)); return true; }
+  catch (e) { toast('ブランドキットを保存できませんでした（ブラウザの保存容量がいっぱいです。ロゴを小さくしてください）'); return false; }
+}
+const brandActive = () => !!(S.project.brand && S.project.brand.id);
+const brandHasColors = () => brandActive() && J.brandColors(S.project.brand).length >= 2;
+function useBrand(id) {
+  const b = BR.list.find(x => x.id === id);
+  S.project.brand = b ? JSON.parse(JSON.stringify(b)) : null;
+  fontKey = ''; renderBrands(); renderColors(); renderFontRoles(); replan(); flushSave();
+  toast(b ? `ブランド：${b.name}（配色と書体はブランドの設定が優先されます）` : 'ブランド：使わない');
+  restartPreview();
+}
+function renderBrands() {
+  const cur = S.project.brand;
+  ['brandSel', 'eBrandSel'].forEach(id => {
+    const sel = $(id); if (!sel) return;
+    sel.innerHTML = '<option value="">使わない</option>' + BR.list.map(b => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join('');
+    sel.value = cur && cur.id ? cur.id : '';
+  });
+  const note = cur && cur.id
+    ? `ブランド「${cur.name}」を使用中：${[J.brandColors(cur).length >= 2 ? '配色' : '', Object.values(cur.fonts || {}).some(Boolean) ? '書体' : '', cur.logo ? 'ロゴ' : ''].filter(Boolean).join('・') || '（まだ中身がありません）'}をブランドの設定で固定しています。おまかせで振っても変わりません。`
+    : 'ブランドキットを選ぶと、配色・書体・ロゴをそのブランドの設定で固定できます。';
+  ['brandNote', 'eBrandNote'].forEach(id => { const el = $(id); if (el) el.textContent = note; });
+  $('brandEdit').disabled = !($('brandSel').value); $('brandDel').disabled = !($('brandSel').value);
+  $('brandCount').textContent = BR.list.length ? `${BR.list.length}件` : '';
+}
+/* ----- editor dialog ----- */
+function openBrandEditor(id) {
+  const src = id ? BR.list.find(b => b.id === id) : null;
+  BR.draft = src ? JSON.parse(JSON.stringify(src)) : {
+    id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: `ブランド ${BR.list.length + 1}`,
+    colors: ['#111111', '#FFFFFF', '#F5A50C'], bg: '#111111', fonts: {}, logo: null,
+  };
+  BR.draft.fonts = BR.draft.fonts || {};
+  $('brandDlgTitle').textContent = src ? 'ブランドキットを編集' : 'ブランドキットを作成';
+  $('brandName').value = BR.draft.name;
+  renderBrandDraft();
+  $('brandDlg').showModal();
+}
+function renderBrandDraft() {
+  const d = BR.draft, box = $('brandColors'); box.innerHTML = '';
+  d.colors.forEach((c, i) => {
+    const row = document.createElement('div'); row.className = 'brand-color';
+    row.innerHTML = `<input type="color" value="${toColorInput(c)}" aria-label="ブランドカラー ${i + 1}"><label class="brand-bg"><input type="radio" name="brandBg" ${d.bg && d.bg.toUpperCase() === c.toUpperCase() ? 'checked' : ''}>背景</label><button type="button" class="ghost small icon-txt" title="この色を外す" aria-label="ブランドカラー ${i + 1} を外す">×</button>`;
+    const [inp, radio, del] = [row.querySelector('input[type=color]'), row.querySelector('input[type=radio]'), row.querySelector('button')];
+    inp.addEventListener('input', () => { const was = d.colors[i]; d.colors[i] = inp.value.toUpperCase(); if (d.bg && was && d.bg.toUpperCase() === was.toUpperCase()) d.bg = d.colors[i]; });
+    radio.addEventListener('change', () => { d.bg = d.colors[i]; });
+    del.addEventListener('click', () => { const was = d.colors.splice(i, 1)[0]; if (d.bg && d.bg.toUpperCase() === String(was).toUpperCase()) d.bg = d.colors[0] || null; renderBrandDraft(); });
+    box.appendChild(row);
+  });
+  $('brandAddColor').disabled = d.colors.length >= BRAND_MAX_COLORS;
+  $('brandColorHint').textContent = d.colors.length === 1 ? '色が1つだけのときは配色を固定しません（2色以上で固定）' : d.colors.length ? '' : '色を登録しないと、配色はスタイルのままです';
+  [['display', 'brandFontDisplay'], ['serif', 'brandFontSerif'], ['body', 'brandFontBody']].forEach(([r, id]) => {
+    $(id).innerHTML = fontSelectOptions(d.fonts[r] || '').replace('<option value="">スタイルの既定</option>', '<option value="">指定なし</option>');
+  });
+  const lg = d.logo;
+  $('brandLogoPrev').hidden = !lg; if (lg) $('brandLogoPrev').src = lg.src;
+  $('brandLogoClear').disabled = !lg;
+  ['brandLogoPos', 'brandLogoSize', 'brandLogoOpacity'].forEach(id => { $(id).disabled = !lg; });
+  $('brandLogoPos').value = (lg && lg.pos) || 'br';
+  $('brandLogoSize').value = (lg && lg.size) || 16; $('brandLogoOpacity').value = lg && lg.opacity != null ? lg.opacity : 100;
+  $('brandLogoSizeVal').textContent = $('brandLogoSize').value + '%'; $('brandLogoOpacityVal').textContent = $('brandLogoOpacity').value + '%';
+}
+async function readLogoFile(file) {
+  const url = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); });
+  const im = new Image(); im.src = url;
+  await new Promise((res, rej) => { im.onload = res; im.onerror = () => rej(new Error('画像を読み込めませんでした')); });
+  const max = 800, w0 = im.naturalWidth || 512, h0 = im.naturalHeight || 512, k = Math.min(1, max / Math.max(w0, h0));
+  const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(w0 * k)); cv.height = Math.max(1, Math.round(h0 * k));
+  cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+  return cv.toDataURL('image/png');   // keeps transparency; SVGs become pixels at up to 800px
+}
+function saveBrandDraft() {
+  const d = BR.draft; if (!d) return;
+  d.name = String($('brandName').value || '').trim().slice(0, 40) || '無題のブランド';
+  d.colors = d.colors.map(c => c.toUpperCase());
+  if (d.bg && !d.colors.includes(d.bg.toUpperCase())) d.bg = d.colors[0] || null;
+  for (const r of ['display', 'serif', 'body']) if (!d.fonts[r]) delete d.fonts[r];
+  const i = BR.list.findIndex(b => b.id === d.id), before = BR.list.slice();
+  if (i >= 0) BR.list[i] = d; else BR.list.push(d);
+  if (!saveBrands()) { BR.list = before; return false; }
+  if (S.project.brand && S.project.brand.id === d.id) { S.project.brand = JSON.parse(JSON.stringify(d)); fontKey = ''; renderColors(); renderFontRoles(); replan(); flushSave(); }
+  renderBrands();
+  toast(`ブランドキットを保存：${d.name}`);
+  return true;
+}
+function deleteBrand(id) {
+  const b = BR.list.find(x => x.id === id); if (!b) return;
+  const inUse = S.project.brand && S.project.brand.id === id;
+  if (!confirm(`ブランドキット「${b.name}」を削除しますか？${inUse ? '\nこのプロジェクトでは使うのをやめます。' : ''}`)) return;
+  BR.list = BR.list.filter(x => x.id !== id); saveBrands();
+  if (inUse) useBrand(''); else renderBrands();
+}
+async function exportBrands() {
+  if (!BR.list.length) { toast('ブランドキットがまだありません'); return; }
+  await J.saveFile('jizura_brands.json', new Blob([JSON.stringify({ app: 'jizura', kind: 'brands', version: 1, brands: BR.list })], { type: 'application/json' }));
+}
+async function importBrands(file) {
+  try {
+    const d = JSON.parse(await file.text());
+    const list = d && Array.isArray(d.brands) ? d.brands : null;
+    if (!list) throw new Error('ブランドキットのファイルではありません');
+    const clean = b => ({
+      id: String(b.id), name: String(b.name || '無題のブランド').slice(0, 40),
+      colors: J.brandColors(b).slice(0, BRAND_MAX_COLORS), bg: typeof b.bg === 'string' ? b.bg.toUpperCase() : null,
+      fonts: Object.fromEntries(['display', 'serif', 'body'].filter(r => b.fonts && typeof b.fonts[r] === 'string').map(r => [r, b.fonts[r]])),
+      logo: b.logo && typeof b.logo.src === 'string' && b.logo.src.startsWith('data:image/') ? { src: b.logo.src, pos: J.BRAND_POS.includes(b.logo.pos) ? b.logo.pos : 'br', size: J.clamp(+b.logo.size || 16, 3, 60), opacity: J.clamp(+b.logo.opacity || 100, 10, 100) } : null,
+    });
+    const have = new Set(BR.list.map(b => b.id));
+    const add = list.filter(b => b && b.id && b.name && !have.has(String(b.id))).map(clean);
+    if (!add.length) { toast('新しいブランドキットはありませんでした（すべて登録済みです）'); return; }
+    const before = BR.list; BR.list = before.concat(add);
+    if (!saveBrands()) { BR.list = before; return; }
+    renderBrands(); toast(`ブランドキットを ${add.length} 件読み込みました`);
+  } catch (e) { toast('読み込めませんでした：' + (e.message || e)); }
+}
+function bindBrands() {
+  ['brandSel', 'eBrandSel'].forEach(id => $(id).addEventListener('change', e => useBrand(e.target.value)));
+  $('brandNew').addEventListener('click', () => openBrandEditor(null));
+  $('brandEdit').addEventListener('click', () => { const id = $('brandSel').value; if (id) openBrandEditor(id); });
+  $('brandDel').addEventListener('click', () => { const id = $('brandSel').value; if (id) deleteBrand(id); });
+  $('brandExport').addEventListener('click', exportBrands);
+  $('brandImport').addEventListener('click', () => $('brandFile').click());
+  $('brandFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importBrands(f); e.target.value = ''; });
+  $('brandAddColor').addEventListener('click', () => { const d = BR.draft; if (d.colors.length < BRAND_MAX_COLORS) { d.colors.push('#888888'); if (!d.bg) d.bg = d.colors[0]; renderBrandDraft(); } });
+  [['display', 'brandFontDisplay'], ['serif', 'brandFontSerif'], ['body', 'brandFontBody']].forEach(([r, id]) => $(id).addEventListener('change', e => { if (e.target.value) BR.draft.fonts[r] = e.target.value; else delete BR.draft.fonts[r]; }));
+  $('brandLogoFile').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { const src = await readLogoFile(f); const lg = BR.draft.logo || { pos: 'br', size: 16, opacity: 100 }; BR.draft.logo = Object.assign(lg, { src }); renderBrandDraft(); }
+    catch (err) { toast('ロゴ：' + (err.message || err)); }
+  });
+  $('brandLogoClear').addEventListener('click', () => { BR.draft.logo = null; renderBrandDraft(); });
+  $('brandLogoPos').addEventListener('change', e => { if (BR.draft.logo) BR.draft.logo.pos = e.target.value; });
+  $('brandLogoSize').addEventListener('input', e => { if (BR.draft.logo) BR.draft.logo.size = +e.target.value; $('brandLogoSizeVal').textContent = e.target.value + '%'; });
+  $('brandLogoOpacity').addEventListener('input', e => { if (BR.draft.logo) BR.draft.logo.opacity = +e.target.value; $('brandLogoOpacityVal').textContent = e.target.value + '%'; });
+  $('brandSave').addEventListener('click', e => { e.preventDefault(); if (saveBrandDraft()) $('brandDlg').close(); });
+  $('brandCancel').addEventListener('click', e => { e.preventDefault(); $('brandDlg').close(); });
+  $('brandDlg').addEventListener('close', () => { BR.draft = null; });
 }
 
 /* ---------------- history of looks (◀ ▶) ---------------- */
@@ -1717,6 +1870,7 @@ async function runBatchExport() {
       const plan = aspect === S.project.aspect ? S.plan : J.plan(project, audioLike());
       setText(`${tag} 準備中…`);
       await J.ensureFonts(S.project.lyrics + (S.project.title || '') + (S.project.artist || '') + HUD_CHARS, J.fontsOfPlan(plan));
+      await J.brandReady(plan);
       const r = await J.exportMP4({
         plan, project, audio: S.project.includeAudio !== false ? S.audio : null, quality: S.project.quality || 'high', signal: ac.signal,
         onProgress: (p, m) => { setBar((k + p) / list.length); setText(`${tag} ${m}`); },
@@ -1753,6 +1907,7 @@ async function runExport(kind) {
   const t0 = performance.now();
   try {
     await J.ensureFonts(S.project.lyrics + (S.project.title || '') + (S.project.artist || '') + HUD_CHARS, J.fontsOfPlan(S.plan));
+    await J.brandReady(S.plan);
     if (kind === 'mp4') {
       const r = await J.exportMP4({ plan: S.plan, project: S.project, audio: S.project.includeAudio !== false ? S.audio : null, quality: S.project.quality || 'high', onProgress, signal: ac.signal });
       txt.textContent = `完成 ${(r.blob.size / 1048576).toFixed(1)}MB・${r.codec}${r.audio ? ' + ' + r.audio.toUpperCase() : ''}・${((performance.now() - t0) / 1000).toFixed(0)}秒`;
@@ -1817,6 +1972,7 @@ function updateTap() {
 
 /* ---------------- sync all inputs from project ---------------- */
 function syncUI() {
+  renderBrands();
   $('songTitle').value = S.project.title || ''; $('songArtist').value = S.project.artist || '';
   $('lyrics').value = S.project.lyrics;
   $('jevPrompt').value = S.project.jevPrompt || '';
@@ -2156,7 +2312,7 @@ function bind() {
   $('btnAE').addEventListener('click', () => J.saveFile(baseName() + '_ae.json', JSON.stringify(J.planForAE(S.plan, S.project), null, 1)));
   $('fileProject').addEventListener('change', async e => {
     const f = e.target.files && e.target.files[0]; if (!f) return;
-    try { S.project = mergeProject(JSON.parse(await f.text())); syncUI(); replan(); await restoreMediaAssets(); }
+    try { S.project = mergeProject(JSON.parse(await f.text())); loadBrands(); syncUI(); replan(); await restoreMediaAssets(); }
     catch (err) { showMsg('プロジェクトを読み込めませんでした'); setTimeout(() => showMsg(null), 2500); }
     e.target.value = '';
   });
@@ -2197,7 +2353,7 @@ function boot() {
   S.project = loadLocal();
   cleanupDeletedMedia();
   initUndo();
-  bind(); initVolume(); loadFavs(); renderFavs(); syncUI(); replan();
+  bind(); bindBrands(); initVolume(); loadFavs(); renderFavs(); loadBrands(); syncUI(); replan();
   restoreMediaAssets();
   let mode = 'easy'; try { mode = localStorage.getItem('jizura.mode') || 'easy'; } catch (e) {}
   setMode(mode); commit();

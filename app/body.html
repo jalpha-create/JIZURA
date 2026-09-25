@@ -147,6 +147,10 @@
           <div id="easyNow" class="now"></div>
         </div>
         <div class="easy-sec">
+          <div class="fav-h"><h3>ブランド</h3><select id="eBrandSel" class="brand-easy-sel" aria-label="使うブランドキット"></select></div>
+          <p id="eBrandNote" class="hint brand-note"></p>
+        </div>
+        <div class="easy-sec">
           <div class="fav-h"><h3>お気に入り <span id="eFavCount" class="muted mono"></span></h3><button id="eFavAdd" class="ghost small">☆ お気に入りに追加</button></div>
           <div id="eFavList" class="fav-list"></div>
         </div>
@@ -188,6 +192,12 @@
           <summary>お気に入り <span id="favCount" class="muted mono"></span></summary>
           <div class="fav-tools"><button id="favAdd" class="small">☆ いまの案を追加</button><button id="favExport" class="ghost small" title="お気に入りをファイルに保存（別のブラウザやPCへ移すとき）">ファイルに保存</button><button id="favImport" class="ghost small" title="保存したお気に入りのファイルを読み込んで追加">読み込む</button><input id="favFile" type="file" accept=".json,application/json" hidden></div>
           <div id="favList" class="fav-list"></div>
+        </details>
+        <details class="fav-box brand-box" open>
+          <summary>ブランドキット <span id="brandCount" class="muted mono"></span></summary>
+          <div class="brand-pick"><label class="field">使うブランド<select id="brandSel" aria-label="使うブランドキット"></select></label></div>
+          <div class="fav-tools"><button id="brandNew" class="small" type="button">＋ 新規作成</button><button id="brandEdit" class="ghost small" type="button">編集</button><button id="brandDel" class="ghost small" type="button">削除</button><button id="brandExport" class="ghost small" type="button" title="ブランドキットをファイルに保存（別のブラウザやPCへ移すとき）">ファイルに保存</button><button id="brandImport" class="ghost small" type="button" title="保存したブランドキットのファイルを読み込んで追加">読み込む</button><input id="brandFile" type="file" accept=".json,application/json" hidden></div>
+          <p id="brandNote" class="hint brand-note"></p>
         </details>
         <div id="styleGrid" class="style-grid"></div>
         <h3>フォントの役割</h3>
@@ -301,5 +311,35 @@
       <p class="muted mono">© 2026 hirazisora · MIT</p>
     </section>
     <div class="terms-foot"><button value="close" class="primary" autofocus>閉じる</button></div>
+  </form>
+</dialog>
+
+<dialog id="brandDlg" class="brand-dlg" aria-labelledby="brandDlgTitle">
+  <form method="dialog">
+    <h2 id="brandDlgTitle">ブランドキット</h2>
+    <label class="field">名前<input id="brandName" type="text" maxlength="40"></label>
+    <h3>ブランドカラー</h3>
+    <p class="hint">2〜5色。「背景」に選んだ色がメインの背景になり、ほかの色から文字色とアクセントを読みやすい明るさで選びます。</p>
+    <div id="brandColors" class="brand-colors"></div>
+    <div class="row"><button id="brandAddColor" class="ghost small" type="button">＋ 色を追加</button><span id="brandColorHint" class="muted"></span></div>
+    <h3>書体</h3>
+    <div class="brand-fonts">
+      <label class="field">見出し<select id="brandFontDisplay"></select></label>
+      <label class="field">明朝枠<select id="brandFontSerif"></select></label>
+      <label class="field">小さな文字<select id="brandFontBody"></select></label>
+    </div>
+    <h3>ロゴ</h3>
+    <div class="brand-logo">
+      <img id="brandLogoPrev" alt="ロゴのプレビュー" hidden>
+      <div class="brand-logo-ctl">
+        <label class="file">画像を選ぶ（PNG / SVG / JPG）<input id="brandLogoFile" type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp"></label>
+        <button id="brandLogoClear" class="ghost small" type="button">ロゴを外す</button>
+        <label class="field">位置<select id="brandLogoPos"><option value="br">右下</option><option value="bl">左下</option><option value="tr">右上</option><option value="tl">左上</option><option value="bc">下中央</option><option value="tc">上中央</option></select></label>
+        <label class="field">大きさ <span id="brandLogoSizeVal" class="muted mono"></span><input id="brandLogoSize" type="range" min="3" max="60" step="1"></label>
+        <label class="field">不透明度 <span id="brandLogoOpacityVal" class="muted mono"></span><input id="brandLogoOpacity" type="range" min="10" max="100" step="5"></label>
+      </div>
+    </div>
+    <p class="hint">ロゴは全カットの上に重ねて書き出されます（透過PNG 前景／後景では前景だけ）。大きさは画面の短い辺に対する割合です。</p>
+    <div class="terms-foot"><button id="brandCancel" class="ghost" type="button">キャンセル</button><button id="brandSave" class="primary" type="button">保存</button></div>
   </form>
 </dialog>
